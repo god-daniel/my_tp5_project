@@ -1,0 +1,129 @@
+@basecolor1:#37ba65;
+@basecolor2:#e6e6e6;
+@basecolor3:#d8d8d8;
+.bgright1(){
+    background:url('../../Public/image/right1.png') no-repeat center;
+}
+body,html,button,input{font-family: "Microsoft YaHei"}
+input,button,textarea,select{outline: none}
+textarea{resize: none}a{text-decoration: none;}li{list-style: none}img{border:none}
+*{margin: 0;padding: 0}.disnone{display:none};
+.fl{float: left}.fr{float: right}.vt{vertical-align: top}.vm{vertical-align: middle}.vb{vertical-align: bottom}
+.cp{cursor:pointer}
+.textal(){text-align: left}.textac{text-align: center}.textar{text-align: right}
+.centerblock(@w){width:@w;margin:0 auto}
+.clearfix{
+    zoom:1;
+    &:after{display:block;clear:both;content:"";visibility:hidden;height:0;}
+}
+.mt(@w)
+{
+    margin-top: @w;
+}
+.mr(@w)
+{
+    margin-right: @w;
+}
+.mb(@w)
+{
+    margin-bottom: @w;
+}
+.ml(@w)
+{
+    margin-left: @w;
+}
+.pt(@w)
+{
+    padding-top: @w;
+}
+.pr(@w)
+{
+    padding-right: @w;
+}
+.pb(@w)
+{
+    padding-bottom: @w;
+}
+.pl(@w)
+{
+    padding-left: @w;
+}
+.radius(@rad:3px)
+{
+    -webkit-border-radius: @rad;
+    -moz-border-radius: @rad;
+    -o-border-radius: @rad;
+    -ms-border-radius:@rad;
+    border-radius: @rad;
+}
+.shadow{
+    -moz-box-shadow: 0px 2px 10px 0px #e6e6e6;
+    -o-box-shadow: 0px 2px 10px 0px #e6e6e6;
+    -webkit-box-shadow: 0px 2px 10px 0px #e6e6e6;
+    box-shadow: 0px 2px 10px 0px #e6e6e6;
+}
+.box-shadow(@y:0,@x:0,@shadow:0,@size:0,@color:#ccc){
+    -moz-box-shadow:@arguments;
+    -o-box-shadow:@arguments;
+    -webkit-box-shadow:@arguments;
+    box-shadow:@arguments;
+}
+.boxsize(@w:auto,@h:auto)
+{
+    width: @w;height: @h;
+}
+.font(@size:12px,@c:#fff)
+{
+    font-size:@size;
+    color:@c;
+}
+.inputTexT(@w,@h)
+{
+    width: @w;.pl(10px);height: @h;line-height: @h;.vm;
+}
+.inputBorder(@w:1px,@c:#ccc,@s:solid)
+{
+    border:@w @c @s;
+    &:active{border-color:lighten(@c,10%)}
+}
+.boxBorder(@w:1px,@c:#ccc,@s:solid)
+{
+    border:@w @c @s;
+}
+.botton(@w:90px,@h:34px,@c:@basecolor1)
+{
+    width: @w;height: @h;line-height: @h;.textac();
+    color:#fff;background-color: @c;border:none;outline:none;
+   .radius(2px);.cp();
+    &:hover{background-color:lighten(@c,10%)}
+}
+.textoverflow{
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+//表格里面的隐藏文字
+.flowText{
+    .inputBorder(1px,#f2b22a,solid);
+    .radius(3px);position:absolute;
+    .font(14px,#676767);padding:7px;background:#fff;max-width:410px;
+    word-break:break-all;
+    img{
+        position:absolute;top:-7px;left:50%;
+    }
+    table{
+        .boxBorder(1px,solid,#e6e6e6);
+        .radius(2px);width:100%;
+        td{
+            .textac();
+            border-bottom:1px solid #e6e6e6;
+            padding:4px 0;
+        }
+        tr:last-child{
+                td{
+                    border-bottom:none;
+                }
+            }
+    }
+}        
+

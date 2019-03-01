@@ -1,0 +1,39 @@
+{
+    "name": "tp5spider",
+    "description": "the framework of tp5 and querylist",
+    "type": "project",
+    "keywords": [
+        "tp5",
+        "ORM",
+		"spider"
+    ],
+    "homepage": "http://xxxx.cn/",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "daniel",
+            "email": "506682730@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0.0",
+        "topthink/framework": "5.1.*",
+		"topthink/think-migration": "^2.0",
+		"lcobucci/jwt": "^3.2",
+        "firebase/php-jwt": "^5.0",
+        "jaeger/querylist": "^4.0",
+        "league/fractal": "^0.17.0",
+        "jackchow/rbac": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "app\\": "application"
+        }
+    },
+    "extra": {
+        "think-path": "thinkphp"
+    },
+    "config": {
+        "preferred-install": "dist"
+    }
+}

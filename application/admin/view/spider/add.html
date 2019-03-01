@@ -1,0 +1,122 @@
+{extend name="Layout/index" /}
+
+{block name="main"}
+<div style="margin: 15px;">
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>添加爬虫规则</legend>
+    </fieldset>
+
+    <form class="layui-form " action="{:url('spider/store')}" method="POST">
+        <fieldset class="layui-elem-field site-demo-button">
+            <legend>基本信息</legend>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">网址</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="url_host" lay-verify="required" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">路径</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="url_path"  autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">备注</label>
+                <div class="layui-input-block">
+                    <input type="text" name="remark" lay-verify="title" autocomplete="off" placeholder="请输入备注信息" class="layui-input">
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="layui-elem-field site-demo-button">
+            <legend>参数信息</legend>
+            <div>
+                <button class="layui-btn layui-btn-lg">增加一项</button>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">参数</label>
+                <div class="layui-input-block">
+                    <input type="text" name="params_key[]" lay-verify="title" autocomplete="off" placeholder="请输入参数字段" class="layui-input">
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="layui-elem-field site-demo-button">
+            <legend>规则信息</legend>
+            <div>
+                <button class="layui-btn layui-btn-lg">增加一项</button>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">字段</label>
+                <div class="layui-input-block">
+                    <input type="text" name="key_name[]" lay-verify="title" autocomplete="off" placeholder="请输入参数字段" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">规则</label>
+                <div class="layui-input-block">
+                    <input type="text" name="key_rules[]" lay-verify="title" autocomplete="off" placeholder="请输入参数字段" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">规则备注</label>
+                <div class="layui-input-block">
+                    <input type="text" name="rules_remark[]" lay-verify="title" autocomplete="off" placeholder="请输入参数字段" class="layui-input">
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="layui-elem-field site-demo-button">
+            <legend>子规则信息</legend>
+            <div>
+                <button class="layui-btn layui-btn-lg">增加一项</button>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">字段</label>
+                <div class="layui-input-block">
+                    <input type="text" name="child_key_name[]" lay-verify="title" autocomplete="off" placeholder="请输入参数字段" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">规则</label>
+                <div class="layui-input-block">
+                    <input type="text" name="child_key_rules[]" lay-verify="title" autocomplete="off" placeholder="请输入参数字段" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">规则备注</label>
+                <div class="layui-input-block">
+                    <input type="text" name="child_rules_remark[]" lay-verify="title" autocomplete="off" placeholder="请输入参数字段" class="layui-input">
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit="" lay-filter="demo1">新增</button>
+                <a href="{:url('role/index')}" class="layui-btn layui-btn-primary">返回</a>
+            </div>
+        </div>
+    </form>
+</div>
+{/block}
+
+{block name="footer"}
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function() {
+        var form = layui.form;
+
+        //自定义验证规则
+        form.verify({
+            title: function(value) {
+                if(value.length < 1) {
+                    return '角色名不能为空角色名不能为空';
+                }
+            }
+        });
+    });
+</script>
+{/block}

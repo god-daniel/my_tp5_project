@@ -1,0 +1,82 @@
+.infocontent{
+	
+}
+.infopic{
+	float: left;
+	width: 434px;
+	border:1px solid #e6e6e6;
+	background: #fff;
+}
+.infopic img{display: block;margin: 0 auto}
+.infoline{
+	float: right;
+	width: 742px;
+	min-height: 330px;
+    _height: 330px;
+	border:1px solid #e6e6e6;
+	background: #fff;
+}
+.infoline .infotext p{
+	font:14px '宋体';
+	color: #5f6165;
+	margin-bottom: 20px;
+}
+.infoline .infotext div{
+	float: left;width:361px;
+	padding-left: 10px;
+}
+.cominfo{
+	background: #fff;
+	font:14px '宋体';border:1px solid #e6e6e6;
+	color: #5f6165;padding-left: 10px;padding-top: 10px;border-top:none;
+}
+.cominfo p{
+	margin-bottom: 20px;
+}
+.payinfos{
+	background: #fff;
+	padding: 10px;
+    width: 568px;
+    margin: 0 auto;
+}
+.payinfos p{
+	font-size:14px;
+	color: #5f6165;
+	margin: 10px 0;
+	line-height: 20px
+} 
+.c-payinfos{
+	background-color: #ffe4e0;
+	border-radius: 3px
+}
+.payinfos .c-payinfos div{
+	width: 264px;
+    padding: 0 10px;
+    margin: 10px 0;
+}
+.payinn{
+	background: #fff;border:1px solid #e6e6e6;border-top:1px dashed #e6e6e6;
+	padding: 0 10px;padding-top: 10px;
+}
+.payinn p{
+	font:16px "Microsoft YaHei";
+	color: #5f6165;
+	margin-bottom: 20px;
+}
+.docdown{
+	height: 40px;width: 100px;
+	text-align: center;line-height: 40px;
+	display: inline-block;zoom:1;*display: inline;
+	-webkit-border-radius: 2px;
+  -moz-border-radius: 2px;
+  -o-border-radius: 2px;
+  -ms-border-radius: 2px;
+  border-radius: 2px;
+  cursor: pointer;
+   color: #fff;
+   background-color: #78a7ff;
+   margin-top: 10px;
+}
+.docdown:hover{
+	 background-color: #587ed1;
+}
