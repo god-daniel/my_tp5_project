@@ -9,9 +9,10 @@
 namespace app\api\controller;
 use QL\QueryList;
 use think\Controller;
-use app\api\model\FundBaseList;
-use app\api\model\FundDayList;
-use app\api\model\FundHistoryList;
+use app\common\model\FundBaseList;
+use app\common\model\FundBase;
+use app\common\model\FundDayList;
+use app\common\model\FundHistoryList;
 use think\Db;
 use think\facade\Cache;
 
@@ -21,17 +22,21 @@ class Fund extends Controller{
 	// 基础基金网址
 	private $host = 'http://fund.eastmoney.com/js/fundcode_search.js?v=$nowDate162803';
 	private $host3 = 'http://fund.eastmoney.com/data/rankhandler.aspx?op=ph&dt=kf&ft=all&rs=&gs=0&sc=dm&st=desc&sd=$sd&ed=$ed&qdii=&tabSubtype=,,,,,&pi=1&pn=20000&dx=1&v=0.8059335981746323';
+    private $now_host = 'http://fund.eastmoney.com/Data/Fund_JJJZ_Data.aspx?t=1&lx=1&letter=&gsid=&text=&sort=bzdm,asc&page=1,19999&feature=|&dt=$dt471&atfc=&onlySale=1';
+    private $host_info = 'http://fundf10.eastmoney.com/jjfl_$code.html';
+    private $type = ['定开债券'=>5,'债券型'=>6,'债券指数'=>7,'分级杠杆'=>8,'固定收益'=>9,'保本型'=>10,'货币型'=>11,'联接基金'=>12,'理财型'=>13,'混合-FOF'=>14,'QDII'=>15,'QDII-指数'=>16,'股票型'=>17,'股票指数'=>18,'其他创新'=>19,'ETF-场内'=>20,'混合型'=>21,'QDII-ETF'=>22];
+    private $type_nums = [7,14,15,16,17,18,19,20,21,22];
     public function index(){
-
+        var_dump(11);
     }
 	
 	// 每日录入基金数据
 	public function funList(){
-		$is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
+		$is_gzr = $this->is_jiaoyi_day(strtotime("-2 day"));
 		if($is_gzr==0){
 			$url3 = $this->host3;
-			$sd = date("Y-m-d",strtotime("-2 day"));
-			$ed = date("Y-m-d",strtotime("-1 day"));
+			$sd = date("Y-m-d",strtotime("-3 day"));
+			$ed = date("Y-m-d",strtotime("-2 day"));
 			$url3 = str_replace('$sd',$sd,$url3);
 			$url3 = str_replace('$ed',$ed,$url3);
 			$infoList = file_get_contents($url3);
@@ -69,14 +74,13 @@ class Fund extends Controller{
 				// 使用文件缓存
 				Cache::set($data['code'],json_encode($dayArr),3600);
 			}
-			//$cc = json_decode(Cache::get('770001'),true);
 			$history->saveAll($arr);			
 		}		
     }
 	
 	//  添加基础基金数据
 	public function addFunList(){
-		$is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
+		$is_gzr = $this->is_jiaoyi_day(strtotime("-2 day"));
 		if($is_gzr==0){
 			Db::query("truncate table sp_fund_base_list");
 			$nowDate = date("Ymd");
@@ -120,6 +124,274 @@ class Fund extends Controller{
 			}
 			$base->saveAll($arr);
 		}
+    }
+
+    //  每周6更新基金数据
+    public function updateFund(){
+        set_time_limit(0);
+        $is_gzr = 0;
+        $page = 1;
+        if(input('param.page')){
+            $page = input('param.page');
+        }
+        $page_sd = 1000*($page-1)+1;
+        $page_ed = 1000*$page;
+        //$is_gzr = 0;
+        if($is_gzr==0){
+
+            $base_url = $this->host_info;
+            $rules = [
+                //一个规则只能包含一个function
+                //采集class为pt30的div的第一个h1文本
+               // 'all_html' => ['.r_cont','html'],.r_cont>.basic-new>.bs_jz>
+                'unit_value' => ['#fund_gsz','text'],
+                'grow' => ['#fund_gszf','text'],
+                'buy_desc' => ['p.row:eq(1) span:eq(0)','text'],
+                'sell_desc' => ['p.row:eq(1) span:eq(2)','text'],
+                'fee' => ['p.row:eq(2) b:eq(1)','text'],
+                'create_date' => ['.bs_gl p:eq(0) span:eq(0)','text'],
+                'type_desc' => ['.bs_gl p:eq(0) span:eq(1)','text'],
+                'unit_pile_size_desc' => ['.bs_gl p:eq(0) span:eq(2)','text'],
+                'year_manage_fee' => ['table.w770:eq(4) td:eq(1)','text'],
+                'year_deposit_fee' => ['table.w770:eq(4) td:eq(3)','text'],
+                'year_sell_fee' => ['table.w770:eq(4) td:eq(5)','text'],
+                'sell_1_fee' => ['table.w650:eq(2) tr:eq(1) td:eq(2)','text'],
+                'sell_1_day' => ['table.w650:eq(2) tr:eq(1) td:eq(1)','text'],
+                'sell_2_fee' => ['table.w650:eq(2) tr:eq(2) td:eq(2)','text'],
+                'sell_2_day' => ['table.w650:eq(2) tr:eq(2) td:eq(1)','text'],
+            ];
+            // $data = $ql->rules($rules)->query()->getData()->all();
+
+            $base = new FundBase;
+            $all_data = $base::where('id','>=',$page_sd)->where('id','<=',$page_ed)->order('code asc')->select()->toArray();
+            $arr = [];
+            foreach ($all_data as $k=>$v){
+                $code = $all_data[$k]['code'];
+                //$code = '000794';
+                $arr[$k]['create_time'] = 1551577703;  //创建时间
+                $arr[$k]['update_time'] = time();  //更新时间
+                $url = str_replace('$code',$code,$base_url);
+                $ql = QueryList::get($url,null,[
+                    'timeout' => 3600]);
+                $data = $ql->rules($rules)->query()->getData()->all();
+                $ql->destruct();
+                $arr[$k] = $data[0];
+                $arr[$k]['url'] = $url;
+                $arr[$k]['id'] = $v['id'];
+                $arr[$k]['code'] = $v['code'];
+                if(((int)$arr[$k]['unit_value'])){
+                    $arr[$k]['unit_value'] = $arr[$k]['unit_value']*10000;
+                }else{
+                    $arr[$k]['unit_value'] = 0;
+                }
+                if(((int)$arr[$k]['grow'])){
+                    $arr[$k]['grow'] = $arr[$k]['grow']*10000;
+                }else{
+                    $arr[$k]['grow'] = 0;
+                }
+                if(((int)$arr[$k]['fee'])){
+                    $arr[$k]['fee'] = $arr[$k]['fee']*10000;
+                }else{
+                    $arr[$k]['fee'] = 10000;
+                }
+                if(((int)$arr[$k]['sell_1_fee'])){
+                    $arr[$k]['sell_1_fee'] = $arr[$k]['sell_1_fee']*10000;
+                }else{
+                    $arr[$k]['sell_1_fee'] = 10000;
+                }
+                if(((int)$arr[$k]['sell_2_fee'])){
+                    $arr[$k]['sell_2_fee'] = $arr[$k]['sell_2_fee']*10000;
+                }else{
+                    $arr[$k]['sell_2_fee'] = 10000;
+                }
+
+                if($arr[$k]['unit_pile_size']){
+                    $arr[$k]['unit_pile_size'] =substr($arr[$k]['unit_pile_size_desc'],0,strpos($arr[$k]['unit_pile_size_desc'],'亿'))*100;
+                }else{
+                    $arr[$k]['unit_pile_size'] = 0;
+                }
+
+                if($arr[$k]['year_manage_fee']){
+                    $test = substr($arr[$k]['year_manage_fee'],0,strpos($arr[$k]['year_manage_fee'],'%'));
+                    if(strlen($test)>10||!$test ){
+                        $arr[$k]['year_manage_fee'] =10000;
+                    }else{
+                        $arr[$k]['year_manage_fee'] =$test*100;
+                    }
+                }else{
+                    $arr[$k]['year_manage_fee'] = 10000;
+                }
+                if($arr[$k]['year_deposit_fee']){
+                    $arr[$k]['year_deposit_fee'] =substr($arr[$k]['year_deposit_fee'],0,strpos($arr[$k]['year_deposit_fee'],'%'))*100;
+                }else{
+                    $arr[$k]['year_deposit_fee'] = 10000;
+                }
+                if(strpos($arr[$k]['year_sell_fee'], '%')!== false){
+                    $arr[$k]['year_sell_fee'] =substr($arr[$k]['year_sell_fee'],0,strpos($arr[$k]['year_sell_fee'],'%'))*100;
+                }else{
+                    $arr[$k]['year_sell_fee'] = 0;
+                }
+                if(mb_substr($arr[$k]['sell_1_day'], -1)=='年'){
+                    $arr[$k]['sell_1_day'] = mb_strrchr($arr[$k]['sell_1_day'],'于');
+                    $arr[$k]['sell_1_day'] = mb_substr($arr[$k]['sell_1_day'],1, -1)*365;
+                }else{
+                    if(strpos($arr[$k]['sell_1_day'], '于')!== false){
+                        if(mb_substr($arr[$k]['sell_1_day'], -1)=='月'){// 个月
+                            $arr[$k]['sell_1_day'] = mb_strrchr($arr[$k]['sell_1_day'],'于');
+                            $arr[$k]['sell_1_day'] = mb_substr($arr[$k]['sell_1_day'],1, -2)*30;
+                        }elseif(mb_substr($arr[$k]['sell_1_day'], -1)=='天'){
+                            $arr[$k]['sell_1_day'] = mb_strrchr($arr[$k]['sell_1_day'],'于');
+                            $arr[$k]['sell_1_day'] = mb_substr($arr[$k]['sell_1_day'],1, -1)*1;
+                        }else{
+                            $arr[$k]['sell_1_day'] = 10000;
+                        }
+                    }else{
+                        $arr[$k]['sell_1_day'] = 10000;
+                    }
+                }
+                if(mb_substr($arr[$k]['sell_2_day'], -1)=='年'){
+                    $arr[$k]['sell_2_day'] = mb_strrchr($arr[$k]['sell_2_day'],'于');
+                    if($arr[$k]['sell_2_day']){
+                        $arr[$k]['sell_2_day'] = mb_substr($arr[$k]['sell_2_day'],1, -1)*365;
+                    }else{
+                        $arr[$k]['sell_2_day'] = 365;
+                    }
+                }else{
+                    if(strpos($arr[$k]['sell_2_day'], '于')!== false){
+                        if(mb_substr($arr[$k]['sell_2_day'], -1)=='月'){// 个月
+                            $arr[$k]['sell_2_day'] = mb_strrchr($arr[$k]['sell_2_day'],'于');
+                            $arr[$k]['sell_2_day'] = mb_substr($arr[$k]['sell_2_day'],1, -2)*30;
+                        }elseif(mb_substr($arr[$k]['sell_2_day'], -1)=='天'){
+                            $arr[$k]['sell_2_day'] = mb_strrchr($arr[$k]['sell_2_day'],'于');
+                            $arr[$k]['sell_2_day'] = mb_substr($arr[$k]['sell_2_day'],1, -1)*1;
+                        }else{
+                            $arr[$k]['sell_2_day'] = 10000;
+                        }
+                    }else{
+                        $arr[$k]['sell_2_day'] = 10000;
+                    }
+                }
+                $arr[$k]['buy_status'] = 1;
+                if($arr[$k]['buy_desc']=='开放申购') {
+                    $arr[$k]['buy_status'] = 0;
+                }
+            }
+            $base->saveAll($arr);
+        }
+    }
+    //  更新当前基金净值与增长率
+    public function nowFund(){
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+        if($is_gzr==0){
+            $dt = time();
+            $url = $this->now_host;
+            $url = str_replace('$dt',$dt,$url);
+            $list = file_get_contents($url);
+            $list = substr($list,strpos($list,'datas:'));
+            $list = substr($list,strpos($list,'['));
+            $list = substr($list,0,strpos($list, ',count:'));
+            $arr1 = json_decode($list,true);
+            //var_dump($list);
+            var_dump($arr1[773]);
+            die;
+
+            $update_date = date("Y-m-d H:i:s");
+            $base = new FundBase;
+            $all_data = $base::field('id,code,name,update_date,fee,buy_status,jm,grow,unit_value')->order('code asc')->select()->toArray();
+            foreach ($all_data as $k=>$v){
+                foreach ($arr1 as $kk=>$vv){
+                    $all_data[$k]['buy_status'] = 1;  //不可买
+                    $all_data[$k]['create_time'] = 1551577703;  //创建时间
+                    if($v['code'] == $vv[0]){
+                        $all_data[$k]['buy_status'] = 0;  //可买
+                        $all_data[$k]['jm'] = $vv[2];  //缩写
+                    }
+                }
+            }
+            var_dump($all_data);die;
+            //$base->saveAll($all_data);
+        }
+    }
+    //  更新基金估值
+    public function updateNowFund(){
+        set_time_limit(0);
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-3 day"));
+        $page = 1;
+        if(input('param.page')){
+            $page = input('param.page');
+        }
+        $page_sd = 2000*($page-1)+1;
+        $page_ed = 2000*$page;
+        //$is_gzr = 0;
+        if($is_gzr==0){
+
+            $base_url = $this->host_info;
+            $rules = [
+                //一个规则只能包含一个function
+                //采集class为pt30的div的第一个h1文本
+                // 'all_html' => ['.r_cont','html'],.r_cont>.basic-new>.bs_jz>
+                'unit_value' => ['#fund_gsz','text'],
+                'grow' => ['#fund_gszf','text'],
+                'fee' => ['p.row:eq(2) b:eq(1)','text'],
+            ];
+            // $data = $ql->rules($rules)->query()->getData()->all();
+
+            $base = new FundBase;
+            $all_data = $base::where('id','>=',$page_sd)
+                ->where('id','<=',$page_ed)
+                ->where('type','in',$this->type_nums)
+                ->where('year_manage_fee','<',10000)
+                ->where('sell_2_day','<=',30)
+                ->where('buy_status','=',0)
+                ->order('code asc')
+                ->select()->toArray();
+            $arr = [];
+            foreach ($all_data as $k=>$v){
+                $code = $all_data[$k]['code'];
+                // $code = '002877';
+                //echo $code;echo '</br>';echo '</br>';
+                $arr[$k]['create_time'] = 1551577703;  //创建时间
+                $arr[$k]['update_time'] = time();  //更新时间
+                $url = str_replace('$code',$code,$base_url);
+                $ql = QueryList::get($url,null,[
+                    'timeout' => 3600]);
+                $data = $ql->rules($rules)->query()->getData()->all();
+                if($code=='002877'){
+                    // var_dump($data[0]);
+                }
+                $ql->destruct();
+                $arr[$k] = $data[0];
+                $arr[$k]['url'] = $url;
+                $arr[$k]['id'] = $v['id'];
+                $arr[$k]['code'] = $v['code'];
+                if(((int)$arr[$k]['unit_value'])){
+                    $arr[$k]['unit_value'] = $arr[$k]['unit_value']*10000;
+                }else{
+                    $arr[$k]['unit_value'] = 0;
+                }
+                if(((int)$arr[$k]['grow'])){
+                    $arr[$k]['grow'] = $arr[$k]['grow']*10000;
+                }else{
+                    $arr[$k]['grow'] = 0;
+                }
+                if(((int)$arr[$k]['fee'])){
+                    $arr[$k]['fee'] = $arr[$k]['fee']*10000;
+                }else{
+                    $arr[$k]['fee'] = 10000;
+                }
+            }
+            $base->saveAll($arr);
+        }
+    }
+    //  更新基金类型
+    public function changeType(){
+        $base = new FundBase;
+        $all_data = $base::field('id,code,type,type_desc')->order('code asc')
+            ->select()->toArray();
+        foreach ($all_data as $k=>$v){
+            $all_data[$k]['type'] = $this->type[$v['type_desc']];
+        }
+        $base->saveAll($all_data);
     }
 	//  是否交易日
 	public function is_jiaoyi_day($times=''){
