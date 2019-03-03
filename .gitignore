@@ -2,6 +2,8 @@
 /.vscode
 *.log
 /.git
+/.gitignore
+/config/database.php
 /runtime/cache/
 /runtime/log/
 /runtime/temp/
