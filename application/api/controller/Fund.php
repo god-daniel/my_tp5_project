@@ -23,6 +23,7 @@ class Fund extends Controller{
 	private $host = 'http://fund.eastmoney.com/js/fundcode_search.js?v=$nowDate162803';
 	private $host3 = 'http://fund.eastmoney.com/data/rankhandler.aspx?op=ph&dt=kf&ft=all&rs=&gs=0&sc=dm&st=desc&sd=$sd&ed=$ed&qdii=&tabSubtype=,,,,,&pi=1&pn=20000&dx=1&v=0.8059335981746323';
     private $now_host = 'http://fund.eastmoney.com/Data/Fund_JJJZ_Data.aspx?t=1&lx=1&letter=&gsid=&text=&sort=bzdm,asc&page=1,19999&feature=|&dt=$dt471&atfc=&onlySale=1';
+    private $e_host = 'http://api.fund.eastmoney.com/FundGuZhi/GetFundGZList?type=1&sort=1&orderType=asc&canbuy=0&pageIndex=1&pageSize=20000&callback=jQuery18309014588353715209_1551664385589&_=$dt179';
     private $host_info = 'http://fundf10.eastmoney.com/jjfl_$code.html';
     private $type = ['定开债券'=>5,'债券型'=>6,'债券指数'=>7,'分级杠杆'=>8,'固定收益'=>9,'保本型'=>10,'货币型'=>11,'联接基金'=>12,'理财型'=>13,'混合-FOF'=>14,'QDII'=>15,'QDII-指数'=>16,'股票型'=>17,'股票指数'=>18,'其他创新'=>19,'ETF-场内'=>20,'混合型'=>21,'QDII-ETF'=>22];
     private $type_nums = [7,14,15,16,17,18,19,20,21,22];
@@ -279,7 +280,7 @@ class Fund extends Controller{
             $base->saveAll($arr);
         }
     }
-    //  更新当前基金净值与增长率
+    //  更新当前基金净值与增长率（列表中更新）
     public function nowFund(){
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
         if($is_gzr==0){
@@ -292,7 +293,7 @@ class Fund extends Controller{
             $list = substr($list,0,strpos($list, ',count:'));
             $arr1 = json_decode($list,true);
             //var_dump($list);
-            var_dump($arr1[773]);
+            var_dump($arr1[0]);
             die;
 
             $update_date = date("Y-m-d H:i:s");
@@ -312,10 +313,10 @@ class Fund extends Controller{
             //$base->saveAll($all_data);
         }
     }
-    //  更新基金估值
+    //  更新基金估值(详情中更新)
     public function updateNowFund(){
         set_time_limit(0);
-        $is_gzr = $this->is_jiaoyi_day(strtotime("-3 day"));
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
         $page = 1;
         if(input('param.page')){
             $page = input('param.page');
@@ -392,6 +393,16 @@ class Fund extends Controller{
             $all_data[$k]['type'] = $this->type[$v['type_desc']];
         }
         $base->saveAll($all_data);
+    }
+
+    //  我的基金列表
+    public function myFund(){
+        $data = Db::table('sp_my_fund')
+            ->alias('m')
+            ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
+            ->field('m.*,b.name,b.fee,b.unit_value,b.grow,b.sell_1_fee,b.sell_2_fee,b.sell_1_day,b.sell_2_day,b.num_1_grow,b.num_2_grow,b.num_3_grow,b.num_4_grow,b.num_5_grow')
+            ->select();
+        var_dump($data);
     }
 	//  是否交易日
 	public function is_jiaoyi_day($times=''){
