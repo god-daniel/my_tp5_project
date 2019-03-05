@@ -23,7 +23,7 @@ class Fund extends Controller{
 	private $host = 'http://fund.eastmoney.com/js/fundcode_search.js?v=$nowDate162803';
 	private $host3 = 'http://fund.eastmoney.com/data/rankhandler.aspx?op=ph&dt=kf&ft=all&rs=&gs=0&sc=dm&st=desc&sd=$sd&ed=$ed&qdii=&tabSubtype=,,,,,&pi=1&pn=20000&dx=1&v=0.8059335981746323';
     private $now_host = 'http://fund.eastmoney.com/Data/Fund_JJJZ_Data.aspx?t=1&lx=1&letter=&gsid=&text=&sort=bzdm,asc&page=1,19999&feature=|&dt=$dt471&atfc=&onlySale=1';
-    private $e_host = 'http://api.fund.eastmoney.com/FundGuZhi/GetFundGZList?type=1&sort=1&orderType=asc&canbuy=0&pageIndex=1&pageSize=20000&callback=jQuery18309014588353715209_1551664385589&_=$dt179';
+    private $info_now_host = 'http://fundgz.1234567.com.cn/js/$code.js?rt=1551755226377';
     private $host_info = 'http://fundf10.eastmoney.com/jjfl_$code.html';
     private $type = ['定开债券'=>5,'债券型'=>6,'债券指数'=>7,'分级杠杆'=>8,'固定收益'=>9,'保本型'=>10,'货币型'=>11,'联接基金'=>12,'理财型'=>13,'混合-FOF'=>14,'QDII'=>15,'QDII-指数'=>16,'股票型'=>17,'股票指数'=>18,'其他创新'=>19,'ETF-场内'=>20,'混合型'=>21,'QDII-ETF'=>22];
     private $type_nums = [7,14,15,16,17,18,19,20,21,22];
@@ -33,11 +33,11 @@ class Fund extends Controller{
 	
 	// 每日录入基金数据
 	public function funList(){
-		$is_gzr = $this->is_jiaoyi_day(strtotime("-2 day"));
+		$is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
 		if($is_gzr==0){
 			$url3 = $this->host3;
-			$sd = date("Y-m-d",strtotime("-3 day"));
-			$ed = date("Y-m-d",strtotime("-2 day"));
+			$sd = date("Y-m-d",strtotime("-2 day"));
+			$ed = date("Y-m-d",strtotime("-1 day"));
 			$url3 = str_replace('$sd',$sd,$url3);
 			$url3 = str_replace('$ed',$ed,$url3);
 			$infoList = file_get_contents($url3);
@@ -81,7 +81,7 @@ class Fund extends Controller{
 	
 	//  添加基础基金数据
 	public function addFunList(){
-		$is_gzr = $this->is_jiaoyi_day(strtotime("-2 day"));
+		$is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
 		if($is_gzr==0){
 			Db::query("truncate table sp_fund_base_list");
 			$nowDate = date("Ymd");
@@ -280,7 +280,7 @@ class Fund extends Controller{
             $base->saveAll($arr);
         }
     }
-    //  更新当前基金净值与增长率（列表中更新）
+    //  更新当前基金净值与增长率（列表中更新）不可用
     public function nowFund(){
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
         if($is_gzr==0){
@@ -313,7 +313,49 @@ class Fund extends Controller{
             //$base->saveAll($all_data);
         }
     }
-    //  更新基金估值(详情中更新)
+    //  更新基金估值(详情中更新(请求))
+    public function updateTodayFund(){
+        set_time_limit(0);
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+        $base_url = $this->info_now_host;
+        //$is_gzr = 0;
+        if($is_gzr==0){
+            $base = new FundBase;
+/*             $all_data = $base::where('type','in',$this->type_nums)
+                ->where('year_manage_fee','<',10000)
+                ->where('sell_2_day','<=',30)
+                ->where('buy_status','=',0)
+                ->order('code asc')
+                ->select()->toArray(); */
+            $all_data = $base::order('code asc')
+                ->select()->toArray();
+            $arr = [];
+            foreach ($all_data as $k=>$v){
+                $code = $all_data[$k]['code'];
+                // $code = '002877';
+                //echo $code;echo '</br>';echo '</br>';
+                $arr[$k]['create_time'] = 1551577703;  //创建时间
+                $arr[$k]['update_time'] = time();  //更新时间
+                $arr[$k]['id'] = $v['id'];
+                $arr[$k]['code'] = $v['code'];
+                $arr[$k]['buy_status'] = 1;
+                $url = str_replace('$code',$code,$base_url);
+                $str = HttpGet($url);
+                if($str){
+                    $str = substr($str,strpos($str,'{'));
+                    $str = substr($str,0,strlen($str)-2);
+                    $data = json_decode($str,true);
+                    // var_dump($data);die;
+                    $arr[$k]['buy_status'] = 0;
+                    $arr[$k]['update_date'] = $data['gztime'];
+                    $arr[$k]['unit_value'] = $data['gsz']*10000;
+                    $arr[$k]['grow'] = $data['gszzl']*10000;
+                }
+            }
+            $base->saveAll($arr);
+        }
+    }
+    //  更新基金估值(详情中更新爬虫)
     public function updateNowFund(){
         set_time_limit(0);
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
@@ -362,7 +404,6 @@ class Fund extends Controller{
                 }
                 $ql->destruct();
                 $arr[$k] = $data[0];
-                $arr[$k]['url'] = $url;
                 $arr[$k]['id'] = $v['id'];
                 $arr[$k]['code'] = $v['code'];
                 if(((int)$arr[$k]['unit_value'])){
@@ -383,6 +424,12 @@ class Fund extends Controller{
             }
             $base->saveAll($arr);
         }
+    }
+    //  更新基金类型
+    public function test(){
+        $url = 'http://fundgz.1234567.com.cn/js/000001.js?rt=1551755226377';
+        $ch = HttpGet($url);
+        var_dump($ch);
     }
     //  更新基金类型
     public function changeType(){

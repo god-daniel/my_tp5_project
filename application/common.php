@@ -68,7 +68,11 @@ function HttpGet($url,$status=false){
     curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
 
     $res = curl_exec ( $curl );
+    $httpCode = curl_getinfo($curl,CURLINFO_HTTP_CODE);
     curl_close ( $curl );
+    if ($httpCode!=200) {
+        return false;
+    }
     return $res;
 }
 
