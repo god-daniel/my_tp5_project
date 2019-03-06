@@ -24,6 +24,7 @@ class Fund extends Controller{
 	private $host3 = 'http://fund.eastmoney.com/data/rankhandler.aspx?op=ph&dt=kf&ft=all&rs=&gs=0&sc=dm&st=desc&sd=$sd&ed=$ed&qdii=&tabSubtype=,,,,,&pi=1&pn=20000&dx=1&v=0.8059335981746323';
     private $now_host = 'http://fund.eastmoney.com/Data/Fund_JJJZ_Data.aspx?t=1&lx=1&letter=&gsid=&text=&sort=bzdm,asc&page=1,19999&feature=|&dt=$dt471&atfc=&onlySale=1';
     private $info_now_host = 'http://fundgz.1234567.com.cn/js/$code.js?rt=1551755226377';
+    private $jijin_history_host = 'http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=$code&page=1&per=100&sdate=$sd&edate=$ed';
     private $host_info = 'http://fundf10.eastmoney.com/jjfl_$code.html';
     private $type = ['定开债券'=>5,'债券型'=>6,'债券指数'=>7,'分级杠杆'=>8,'固定收益'=>9,'保本型'=>10,'货币型'=>11,'联接基金'=>12,'理财型'=>13,'混合-FOF'=>14,'QDII'=>15,'QDII-指数'=>16,'股票型'=>17,'股票指数'=>18,'其他创新'=>19,'ETF-场内'=>20,'混合型'=>21,'QDII-ETF'=>22];
     private $type_nums = [7,14,15,16,17,18,19,20,21,22];
@@ -97,7 +98,7 @@ class Fund extends Controller{
 			foreach ($arr1 as $k=>$v){
 				$temp = [];
 				$temp = json_decode(Cache::get($v[0]),true);
-				$data['buy_status'] = 1;
+                $data['buy_status'] = 1;
 				if($temp){
 					$data['update_date'] = $temp['update_date'];
 					$data['fee'] = $temp['fee'];
@@ -113,7 +114,7 @@ class Fund extends Controller{
 					$data['year_three_grow'] = $temp['year_three_grow'];
 					$data['year_grow'] = $temp['year_grow'];
 					$data['create_grow'] = $temp['create_grow'];
-					$data['buy_status'] = 0;				
+                    $data['buy_status'] = 0;
 				}
 				$data['year'] = $year;
 				$data['code'] = $v[0];
@@ -280,39 +281,6 @@ class Fund extends Controller{
             $base->saveAll($arr);
         }
     }
-    //  更新当前基金净值与增长率（列表中更新）不可用
-    public function nowFund(){
-        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
-        if($is_gzr==0){
-            $dt = time();
-            $url = $this->now_host;
-            $url = str_replace('$dt',$dt,$url);
-            $list = file_get_contents($url);
-            $list = substr($list,strpos($list,'datas:'));
-            $list = substr($list,strpos($list,'['));
-            $list = substr($list,0,strpos($list, ',count:'));
-            $arr1 = json_decode($list,true);
-            //var_dump($list);
-            var_dump($arr1[0]);
-            die;
-
-            $update_date = date("Y-m-d H:i:s");
-            $base = new FundBase;
-            $all_data = $base::field('id,code,name,update_date,fee,buy_status,jm,grow,unit_value')->order('code asc')->select()->toArray();
-            foreach ($all_data as $k=>$v){
-                foreach ($arr1 as $kk=>$vv){
-                    $all_data[$k]['buy_status'] = 1;  //不可买
-                    $all_data[$k]['create_time'] = 1551577703;  //创建时间
-                    if($v['code'] == $vv[0]){
-                        $all_data[$k]['buy_status'] = 0;  //可买
-                        $all_data[$k]['jm'] = $vv[2];  //缩写
-                    }
-                }
-            }
-            var_dump($all_data);die;
-            //$base->saveAll($all_data);
-        }
-    }
     //  更新基金估值(详情中更新(请求))
     public function updateTodayFund(){
         set_time_limit(0);
@@ -425,9 +393,120 @@ class Fund extends Controller{
             $base->saveAll($arr);
         }
     }
+    //  添加今日基金数据  每晚10点更新
+    public function addTodayFund(){
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+        if($is_gzr==0){
+            $date = date('Y-m-d');
+            $date = '2019-03-05';
+            $host = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/addHistoryFund?sdate='.$date.'&edate='.$date.'&code=001553';
+            $str = HttpGet($host);
+            var_dump($host);
+        }
+    }
+    //  更新10日基金数据净值 每晚11点更新
+    public function tenTodayFund(){
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+        if($is_gzr==0){
+            $where[] = array('buy_status','=',0);
+            $base = new FundBase;
+            $data = $base::where($where)
+                ->order('code asc')
+                ->limit(10)->select()->toArray();
+            $day_base = new FundDayList();
+            foreach ($data as $k=>$v){
+                $map[] = array('code','=',$v['code']);
+                $day_data = $day_base::where($map)
+                    ->order('code asc,update_date desc')
+                    ->limit(10)->select()->toArray();
+                foreach ($day_data as $kk=>$vv){
+                    $data[$k]['num_'.($kk+1).'_value'] = $vv['unit_value'];
+                    $data[$k]['num_'.($kk+1).'_date'] = $vv['update_date'];
+                }
+
+  /*               $data[$k]['num_2_value'] = $day_data[1]['unit_value']?$day_data[1]['unit_value']:0;
+                $data[$k]['num_2_date'] = $day_data[1]['update_date']?$day_data[1]['update_date']:0;
+                $data[$k]['num_3_value'] = $day_data[2]['unit_value']?$day_data[2]['unit_value']:0;
+                $data[$k]['num_3_date'] = $day_data[2]['update_date']?$day_data[2]['update_date']:0;
+                $data[$k]['num_4_value'] = $day_data[3]['unit_value']?$day_data[3]['unit_value']:0;
+                $data[$k]['num_4_date'] = $day_data[3]['update_date']?$day_data[3]['update_date']:0;
+                $data[$k]['num_5_value'] = $day_data[4]['unit_value']?$day_data[4]['unit_value']:0;
+                $data[$k]['num_5_date'] = $day_data[5]['update_date']?$day_data[5]['update_date']:0;
+                $data[$k]['num_6_value'] = $day_data[0]['unit_value']?$day_data[0]['unit_value']:0;
+                $data[$k]['num_6_date'] = $day_data[0]['update_date']?$day_data[0]['update_date']:0;
+                $data[$k]['num_7_value'] = $day_data[0]['unit_value']?$day_data[0]['unit_value']:0;
+                $data[$k]['num_7_date'] = $day_data[0]['update_date']?$day_data[0]['update_date']:0;
+                $data[$k]['num_8_value'] = $day_data[0]['unit_value']?$day_data[0]['unit_value']:0;
+                $data[$k]['num_8_date'] = $day_data[0]['update_date']?$day_data[0]['update_date']:0;
+                $data[$k]['num_9_value'] = $day_data[0]['unit_value']?$day_data[0]['unit_value']:0;
+                $data[$k]['num_9_date'] = $day_data[0]['update_date']?$day_data[0]['update_date']:0;
+                $data[$k]['num_10_value'] = $day_data[0]['unit_value']?$day_data[0]['unit_value']:0;
+                $data[$k]['num_10_date'] = $day_data[0]['update_date']?$day_data[0]['update_date']:0; */
+            }
+            $base->saveAll($data);
+        }
+    }
+    //  添加历史日基金数据
+    public function addHistoryFund(){
+        set_time_limit(0);
+        $sd = date('Y-m-d',strtotime("-1 month"));
+        $ed = date('Y-m-d');
+        if(input('param.sdate')){
+            $sd = input('param.sdate');
+        }
+        if(input('param.edate')){
+            $ed = input('param.edate');
+        }
+        if(input('param.code')){
+            $where[] = array('code','=',input('param.code'));
+        }
+        $url = $this->jijin_history_host;
+        $where[] = array('buy_status','=',0);
+        $base = new FundBase;
+        $day_list = new FundDayList();
+        $all_data = $base::where($where)
+            ->order('code asc')
+            ->select()->toArray();
+        $arr = [];
+        foreach ($all_data as $k=>$v){
+            $code = $all_data[$k]['code'];
+            $arr[$k]['code'] = $all_data[$k]['code'];
+            $arr[$k]['name'] = $all_data[$k]['name'];
+            $arr[$k]['create_time'] = 1551577703;  //创建时间
+            $arr[$k]['update_time'] = time();  //更新时间
+            $url = str_replace('$code',$code,$url);
+            $url = str_replace('$sd',$sd,$url);
+            $url = str_replace('$ed',$ed,$url);
+            $str = HttpGet($url);
+            if($str){
+                $temp_arr=explode(',', $str);
+                $temp_str = substr($temp_arr[0],strpos($temp_arr[0],'<'));
+                $temp_str = substr($temp_str,0,strlen($temp_str)-1);
+                $table_array = explode('<tr>',$temp_str);
+                foreach ($table_array as $kk=>$vv){
+                    if($table_array>2&&$kk==2){
+                        $td_array = explode('<td',$vv);
+                        $update_date = substr($td_array[1],strpos($td_array[1],'>')+1);
+                        $update_date = substr($update_date,0,strlen($update_date)-5);
+                        $unit_value = substr($td_array[2],strpos($td_array[2],'>')+1);;
+                        $unit_pile_value = substr($td_array[3],strpos($td_array[3],'>')+1);;
+                        $day_grow = substr($td_array[4],strpos($td_array[4],'>')+1);;
+                        $arr[$k]['update_date'] = $update_date;
+                        $arr[$k]['unit_value'] = $unit_value*10000;
+                        $arr[$k]['unit_pile_value'] = $unit_pile_value*10000;
+                        $arr[$k]['day_grow'] = $day_grow*10000;
+
+                    }
+                }
+
+            }
+        }
+        $day_list->saveAll($arr);
+    }
     //  更新基金类型
     public function test(){
         $url = 'http://fundgz.1234567.com.cn/js/000001.js?rt=1551755226377';
+
         $ch = HttpGet($url);
         var_dump($ch);
     }
@@ -438,6 +517,21 @@ class Fund extends Controller{
             ->select()->toArray();
         foreach ($all_data as $k=>$v){
             $all_data[$k]['type'] = $this->type[$v['type_desc']];
+        }
+        $base->saveAll($all_data);
+    }
+    //  更新基金状态  每天晚上10点运行
+    public function changeStatus(){
+        $date = date('Y-m-d');
+        $base = new FundBase;
+        $all_data = $base::field('id,code,buy_status,buy_not_num,update_date')->order('code asc')
+            ->select()->toArray();
+        foreach ($all_data as $k=>$v){
+            $all_data[$k]['buy_status'] = 0;
+            if($date>=$v['update_date']){
+                $all_data[$k]['buy_status'] = 1;
+                $all_data[$k]['buy_not_num'] = 1+$v['buy_not_num'];
+            }
         }
         $base->saveAll($all_data);
     }
