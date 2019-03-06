@@ -459,6 +459,7 @@ class Fund extends Controller{
         if(input('param.code')){
             $where[] = array('code','=',input('param.code'));
         }
+        
         $url = $this->jijin_history_host;
         $where[] = array('buy_status','=',0);
         $base = new FundBase;
