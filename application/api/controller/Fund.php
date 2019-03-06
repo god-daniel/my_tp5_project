@@ -462,16 +462,28 @@ class Fund extends Controller{
         if(input('param.code')){
             $where[] = array('code','=',input('param.code'));
         }
-
+        $page_num = 20000;
+        $page = 1;
+        if(input('param.page')){
+            $page = input('param.page');
+            $page_num = 500;
+        }
+        $page_sd = $page_num*($page-1)+1;
+        $page_ed = $page_num*$page;
         $url = $this->jijin_history_host;
-        $where[] = array('buy_status','=',0);
+        //$where[] = array('buy_status','=',0);
+        $where[] = array('id','>=',$page_sd);
+        $where[] = array('id','<=',$page_ed);
         $base = new FundBase;
         $day_list = new FundDayList();
         $all_data = $base::where($where)
             ->order('code asc')
             ->select()->toArray();
-        $arr = [];
+        $arr[] = array();
+        $i = 0;
         foreach ($all_data as $k=>$v){
+            echo $all_data[$k]['code'];
+            echo '</br>';
             $code = $all_data[$k]['code'];
             $url = str_replace('$code',$code,$url);
             $url = str_replace('$sd',$sd,$url);
@@ -483,22 +495,33 @@ class Fund extends Controller{
                 $temp_str = substr($temp_str,0,strlen($temp_str)-1);
                 $table_array = explode('<tr>',$temp_str);
                 foreach ($table_array as $kk=>$vv){
-                    if($table_array>2&&$kk==2){
+                    if($kk>=2){
                         $td_array = explode('<td',$vv);
                         $update_date = substr($td_array[1],strpos($td_array[1],'>')+1);
                         $update_date = substr($update_date,0,strlen($update_date)-5);
                         $unit_value = substr($td_array[2],strpos($td_array[2],'>')+1);
                         $unit_pile_value = substr($td_array[3],strpos($td_array[3],'>')+1);
-                        $day_grow = substr($td_array[4],strpos($td_array[4],'>')+1);
-                        $arr[]['code'] = $all_data[$k]['code'];
-                        $arr[]['name'] = $all_data[$k]['name'];
-                        $arr[]['create_time'] = 1551577703;  //创建时间
-                        $arr[]['update_time'] = time();  //更新时间
-                        $arr[]['update_date'] = $update_date;
-                        $arr[]['unit_value'] = $unit_value*10000;
-                        $arr[]['unit_pile_value'] = $unit_pile_value*10000;
-                        $arr[]['day_grow'] = $day_grow*10000;
-
+                        $buy_desc = substr($td_array[5],strpos($td_array[5],'>')+1);
+                        $buy_desc = substr($buy_desc,0,strlen($buy_desc)-5);
+                        $bool_desc = mb_substr($buy_desc,0,mb_strlen($buy_desc)-2);
+                        $sell_desc = substr($td_array[6],strpos($td_array[6],'>')+1);
+                        $sell_desc = substr($sell_desc,0,strlen($sell_desc)-5);
+                        if($bool_desc=='暂停'||$bool_desc=='封'){
+                            $day_grow = 0;
+                        }else{
+                            $day_grow = substr($td_array[4],strpos($td_array[4],'>')+1);
+                        }
+                        $arr[$i]['buy_desc'] = $buy_desc;
+                        $arr[$i]['sell_desc'] = $sell_desc;
+                        $arr[$i]['code'] = $all_data[$k]['code'];
+                        $arr[$i]['name'] = $all_data[$k]['name'];
+                        $arr[$i]['create_time'] = 1551577703;  //创建时间
+                        $arr[$i]['update_time'] = time();  //更新时间
+                        $arr[$i]['update_date'] = $update_date;
+                        $arr[$i]['unit_value'] = $unit_value*10000;
+                        $arr[$i]['unit_pile_value'] = $unit_pile_value*10000;
+                        $arr[$i]['day_grow'] = $day_grow*10000;
+                        $i+=1;
                     }
                 }
 
