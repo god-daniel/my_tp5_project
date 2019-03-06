@@ -29,7 +29,7 @@ class Fund extends Controller{
     private $type = ['定开债券'=>5,'债券型'=>6,'债券指数'=>7,'分级杠杆'=>8,'固定收益'=>9,'保本型'=>10,'货币型'=>11,'联接基金'=>12,'理财型'=>13,'混合-FOF'=>14,'QDII'=>15,'QDII-指数'=>16,'股票型'=>17,'股票指数'=>18,'其他创新'=>19,'ETF-场内'=>20,'混合型'=>21,'QDII-ETF'=>22];
     private $type_nums = [7,14,15,16,17,18,19,20,21,22];
     public function index(){
-        var_dump(11);
+        var_dump(112);
     }
 	
 	// 每日录入基金数据
@@ -459,7 +459,7 @@ class Fund extends Controller{
         if(input('param.code')){
             $where[] = array('code','=',input('param.code'));
         }
-        
+
         $url = $this->jijin_history_host;
         $where[] = array('buy_status','=',0);
         $base = new FundBase;
