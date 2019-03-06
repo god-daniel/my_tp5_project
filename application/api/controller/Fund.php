@@ -351,9 +351,9 @@ class Fund extends Controller{
             $all_data = $base::where('id','>=',$page_sd)
                 ->where('id','<=',$page_ed)
                 ->where('type','in',$this->type_nums)
-                ->where('year_manage_fee','<',10000)
+                //->where('year_manage_fee','<',10000)
                 ->where('sell_2_day','<=',30)
-                ->where('buy_status','=',0)
+                //->where('buy_status','=',0)
                 ->order('code asc')
                 ->select()->toArray();
             $arr = [];
@@ -379,12 +379,12 @@ class Fund extends Controller{
                 }else{
                     $arr[$k]['unit_value'] = 0;
                 }
-                if(((int)$arr[$k]['grow'])){
+                if($arr[$k]['grow']){
                     $arr[$k]['grow'] = $arr[$k]['grow']*10000;
                 }else{
                     $arr[$k]['grow'] = 0;
                 }
-                if(((int)$arr[$k]['fee'])){
+                if($arr[$k]['fee']){
                     $arr[$k]['fee'] = $arr[$k]['fee']*10000;
                 }else{
                     $arr[$k]['fee'] = 10000;
@@ -405,24 +405,27 @@ class Fund extends Controller{
     }
     //  更新10日基金数据净值 每晚11点更新
     public function tenTodayFund(){
+        set_time_limit(0);
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
         if($is_gzr==0){
             $where[] = array('buy_status','=',0);
             $base = new FundBase;
-            $data = $base::where($where)
-                ->order('code asc')
-                ->limit(10)->select()->toArray();
+            $data = $base::where($where)->limit(10)
+                ->order('code asc')->select()->toArray();
             $day_base = new FundDayList();
             foreach ($data as $k=>$v){
                 $map[] = array('code','=',$v['code']);
-                $day_data = $day_base::where($map)
-                    ->order('code asc,update_date desc')
-                    ->limit(10)->select()->toArray();
+                $day_data = $day_base::where('code','=', $v['code'])->limit(10)
+                    ->order('code asc,update_date desc')->select()->toArray();
+                $data[$k]['create_time'] = 1551577703;  //创建时间
+                $data[$k]['update_time'] = time();  //更新时间
+                if($k<2){
+                    var_dump($day_data);
+                }
                 foreach ($day_data as $kk=>$vv){
                     $data[$k]['num_'.($kk+1).'_value'] = $vv['unit_value'];
                     $data[$k]['num_'.($kk+1).'_date'] = $vv['update_date'];
                 }
-
   /*               $data[$k]['num_2_value'] = $day_data[1]['unit_value']?$day_data[1]['unit_value']:0;
                 $data[$k]['num_2_date'] = $day_data[1]['update_date']?$day_data[1]['update_date']:0;
                 $data[$k]['num_3_value'] = $day_data[2]['unit_value']?$day_data[2]['unit_value']:0;
@@ -470,10 +473,6 @@ class Fund extends Controller{
         $arr = [];
         foreach ($all_data as $k=>$v){
             $code = $all_data[$k]['code'];
-            $arr[$k]['code'] = $all_data[$k]['code'];
-            $arr[$k]['name'] = $all_data[$k]['name'];
-            $arr[$k]['create_time'] = 1551577703;  //创建时间
-            $arr[$k]['update_time'] = time();  //更新时间
             $url = str_replace('$code',$code,$url);
             $url = str_replace('$sd',$sd,$url);
             $url = str_replace('$ed',$ed,$url);
@@ -488,13 +487,17 @@ class Fund extends Controller{
                         $td_array = explode('<td',$vv);
                         $update_date = substr($td_array[1],strpos($td_array[1],'>')+1);
                         $update_date = substr($update_date,0,strlen($update_date)-5);
-                        $unit_value = substr($td_array[2],strpos($td_array[2],'>')+1);;
-                        $unit_pile_value = substr($td_array[3],strpos($td_array[3],'>')+1);;
-                        $day_grow = substr($td_array[4],strpos($td_array[4],'>')+1);;
-                        $arr[$k]['update_date'] = $update_date;
-                        $arr[$k]['unit_value'] = $unit_value*10000;
-                        $arr[$k]['unit_pile_value'] = $unit_pile_value*10000;
-                        $arr[$k]['day_grow'] = $day_grow*10000;
+                        $unit_value = substr($td_array[2],strpos($td_array[2],'>')+1);
+                        $unit_pile_value = substr($td_array[3],strpos($td_array[3],'>')+1);
+                        $day_grow = substr($td_array[4],strpos($td_array[4],'>')+1);
+                        $arr[]['code'] = $all_data[$k]['code'];
+                        $arr[]['name'] = $all_data[$k]['name'];
+                        $arr[]['create_time'] = 1551577703;  //创建时间
+                        $arr[]['update_time'] = time();  //更新时间
+                        $arr[]['update_date'] = $update_date;
+                        $arr[]['unit_value'] = $unit_value*10000;
+                        $arr[]['unit_pile_value'] = $unit_pile_value*10000;
+                        $arr[]['day_grow'] = $day_grow*10000;
 
                     }
                 }
