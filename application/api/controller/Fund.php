@@ -398,8 +398,7 @@ class Fund extends Controller{
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
         if($is_gzr==0){
             $date = date('Y-m-d');
-            $date = '2019-03-05';
-            $host = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/addHistoryFund?sdate='.$date.'&edate='.$date.'&code=001553';
+            $host = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/addHistoryFund?sdate='.$date.'&edate='.$date;
             $str = HttpGet($host);
             var_dump($host);
         }
