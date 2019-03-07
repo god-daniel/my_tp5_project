@@ -84,6 +84,9 @@ class Fund extends Controller{
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
         if($is_gzr==0){
             $base = new FundBase;
+            if(input('param.code')){
+                $where[] = array('code','=',input('param.code'));
+            }
             $where[] = array('1','=',1);
             $data = $base::where($where)->order('code asc')->select()->toArray();
             foreach ($data as $k=>$v){
@@ -128,6 +131,9 @@ class Fund extends Controller{
         set_time_limit(0);
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
         if($is_gzr==0){
+            if(input('param.code')){
+                $where[] = array('code','=',input('param.code'));
+            }
             $where[] = array('buy_status','=',0);
             $base = new FundBase;
             $data = $base::where($where)->order('code asc')->select()->toArray();
@@ -484,9 +490,9 @@ class Fund extends Controller{
     //  更新基金类型
     public function test(){
         $url = 'http://fundgz.1234567.com.cn/js/000001.js?rt=1551755226377';
-
-        $ch = HttpGet($url);
-        var_dump($ch);
+        Cache::set('zb','111111',7200);
+        //$ch = HttpGet($url);
+        var_dump(Cache::get('zb'));
     }
     //  更新基金类型
     public function changeType(){
