@@ -81,6 +81,7 @@ class Fund extends Controller{
     //  更新基金,购买费,周增长，月增长等数据净值 每晚11点更新
     public function updateFundBase(){
         set_time_limit(0);
+        echo 'cc   ';
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
         if($is_gzr==0){
             $base = new FundBase;
