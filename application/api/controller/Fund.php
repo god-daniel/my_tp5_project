@@ -88,6 +88,8 @@ class Fund extends Controller{
             $data = $base::where($where)->order('code asc')->select()->toArray();
             foreach ($data as $k=>$v){
                 $temp = json_decode(Cache::get($v[0]),true);
+                $data[$k]['create_time'] = 1551577703;  //创建时间
+                $data[$k]['update_time'] = time();  //更新时间
                 $data[$k]['buy_status'] = 1;
                 $data[$k]['buy_not_num'] += 1;
                 if($temp){
@@ -198,7 +200,7 @@ class Fund extends Controller{
             $base->saveAll($arr);
         }
     }
-	//  更新基础基金数据
+	//  更新基础基金数据 每晚11点更新
 	public function addFunList(){
 		$is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
 		if($is_gzr==0){
