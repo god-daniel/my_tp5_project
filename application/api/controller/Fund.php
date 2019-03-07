@@ -117,7 +117,7 @@ class Fund extends Controller{
             $base->saveAll($data);
         }
     }
-    //  添加今日基金数据  每晚10点更新
+    //  添加今日基金数据  每晚10点10更新
     public function addTodayFund(){
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
         if($is_gzr==0){
@@ -127,7 +127,7 @@ class Fund extends Controller{
             var_dump($host);
         }
     }
-    //  更新10日基金数据净值 每晚11点更新
+    //  更新10日基金数据净值 每晚11点开始更新
     public function tenTodayFund(){
         set_time_limit(0);
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
@@ -135,6 +135,16 @@ class Fund extends Controller{
             if(input('param.code')){
                 $where[] = array('code','=',input('param.code'));
             }
+            $page_num = 20000;
+            $page = 1;
+            if(input('param.page')){
+                $page = input('param.page');
+                $page_num = 2000;
+            }
+            $page_sd = $page_num*($page-1)+1;
+            $page_ed = $page_num*$page;
+            $where[] = array('id','>=',$page_sd);
+            $where[] = array('id','<=',$page_ed);
             $where[] = array('buy_status','=',0);
             $base = new FundBase;
             $data = $base::where($where)->order('code asc')->select()->toArray();
@@ -152,6 +162,20 @@ class Fund extends Controller{
             }
             $base->saveAll($data);
         }
+    }
+    //  我的基金列表
+    public function updateMyFund(){
+        set_time_limit(0);
+        $where[] = array('my_fund_status','=',1);
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+        if($is_gzr==0){
+            $data = Db::table('sp_my_fund')
+                ->alias('m')
+                ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
+                ->field('b.id')->where($where)
+                ->select();
+        }
+        var_dump($data);
     }
     //  更新基金最新估值(详情中更新(请求))
     public function updateTodayFund(){
@@ -180,6 +204,7 @@ class Fund extends Controller{
             }
             $page_sd = $page_num*($page-1)+1;
             $page_ed = $page_num*$page;
+            $where[] = array('buy_status','=',0);
             $where[] = array('id','>=',$page_sd);
             $where[] = array('id','<=',$page_ed);
             $all_data = $base::where($where)->order('code asc')
@@ -207,9 +232,9 @@ class Fund extends Controller{
             $base->saveAll($arr);
         }
     }
-	//  更新基础基金数据 每晚11点更新
+	//  更新基础基金数据 每晚10点20更新
 	public function addFunList(){
-		$is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
+		$is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
 		if($is_gzr==0){
 			Db::query("truncate table sp_fund_base_list");
 			$nowDate = date("Ymd");
