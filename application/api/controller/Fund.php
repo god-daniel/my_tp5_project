@@ -420,6 +420,7 @@ class Fund extends Controller{
                 $data[$k]['create_time'] = 1551577703;  //创建时间
                 $data[$k]['update_time'] = time();  //更新时间
                 if($k<2){
+
                     var_dump($day_data);
                 }
                 foreach ($day_data as $kk=>$vv){
@@ -445,7 +446,7 @@ class Fund extends Controller{
                 $data[$k]['num_10_value'] = $day_data[0]['unit_value']?$day_data[0]['unit_value']:0;
                 $data[$k]['num_10_date'] = $day_data[0]['update_date']?$day_data[0]['update_date']:0; */
             }
-            $base->saveAll($data);
+            //$base->saveAll($data);
         }
     }
     //  添加历史日基金数据
