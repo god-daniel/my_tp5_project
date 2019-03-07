@@ -35,11 +35,11 @@ class Fund extends Controller{
 	// 每日录入基金数据 每晚10点添加
 	public function funList(){
         set_time_limit(0);
-		$is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
+		$is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
 		if($is_gzr==0){
 			$url3 = $this->host3;
-			$sd = date("Y-m-d",strtotime("-2 day"));
-			$ed = date("Y-m-d",strtotime("-1 day"));
+			$sd = date("Y-m-d",strtotime("-1 day"));
+			$ed = date("Y-m-d",strtotime("-0 day"));
 			$url3 = str_replace('$sd',$sd,$url3);
 			$url3 = str_replace('$ed',$ed,$url3);
 			$infoList = file_get_contents($url3);
@@ -78,7 +78,7 @@ class Fund extends Controller{
 			$history->saveAll($arr);			
 		}		
     }
-    //  更新基金,购买费,周增长，月增长等数据净值 每晚11点更新
+    //  更新基金,购买费,周增长，月增长等数据净值 每晚10点30更新
     public function updateFundBase(){
         set_time_limit(0);
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
@@ -430,7 +430,7 @@ class Fund extends Controller{
         $page_sd = $page_num*($page-1)+1;
         $page_ed = $page_num*$page;
         $url = $this->jijin_history_host;
-        //$where[] = array('buy_status','=',0);
+        $where[] = array('buy_status','=',0);
         $where[] = array('id','>=',$page_sd);
         $where[] = array('id','<=',$page_ed);
         $base = new FundBase;
