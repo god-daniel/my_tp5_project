@@ -87,6 +87,7 @@ class Fund extends Controller{
             if(input('param.code')){
                 $where[] = array('code','=',input('param.code'));
             }
+            echo 'start   ';
             $where[] = array('1','=',1);
             $data = $base::where($where)->order('code asc')->select()->toArray();
             foreach ($data as $k=>$v){
@@ -98,7 +99,6 @@ class Fund extends Controller{
                 $data[$k]['buy_not_num'] += 1;
                 if($temp){
                     echo '   1111';
-                    echo '</br>';
                     $data[$k]['buy_not_num'] -= 1;
                     $data[$k]['fee'] = $temp['fee'];
                     $data[$k]['unit_value'] = $temp['unit_value'];
@@ -115,6 +115,8 @@ class Fund extends Controller{
                     $data[$k]['create_grow'] = $temp['create_grow'];
                     $data[$k]['buy_status'] = 0;
                 }
+                echo '   2222';
+                echo '</br>';
             }
             $base->saveAll($data);
         }
