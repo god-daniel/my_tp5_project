@@ -172,10 +172,11 @@ class Fund extends Controller{
             $data = Db::table('sp_my_fund')
                 ->alias('m')
                 ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
-                ->field('b.id')->where($where)
-                ->select();
+                ->field('group_concat(distinct(b.id)) as ids')->where($where)->select();
+            $host = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/updateTodayFund?bs=0&ids='.$data[0]['ids'];
+            $str = HttpGet($host);
         }
-        var_dump($data);
+        var_dump($data[0]['ids']);
     }
     //  更新基金最新估值(详情中更新(请求))
     public function updateTodayFund(){
