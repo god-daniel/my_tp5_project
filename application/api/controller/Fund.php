@@ -90,12 +90,15 @@ class Fund extends Controller{
             $where[] = array('1','=',1);
             $data = $base::where($where)->order('code asc')->select()->toArray();
             foreach ($data as $k=>$v){
+                echo $v[0].'   ';
                 $temp = json_decode(Cache::get($v[0]),true);
                 $data[$k]['create_time'] = 1551577703;  //创建时间
                 $data[$k]['update_time'] = time();  //更新时间
                 $data[$k]['buy_status'] = 1;
                 $data[$k]['buy_not_num'] += 1;
                 if($temp){
+                    echo '   1111';
+                    echo '</br>';
                     $data[$k]['buy_not_num'] -= 1;
                     $data[$k]['fee'] = $temp['fee'];
                     $data[$k]['unit_value'] = $temp['unit_value'];
