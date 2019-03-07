@@ -94,13 +94,13 @@ class Fund extends Controller{
             foreach ($data as $k=>$v){
                 echo $v[0].'   ';
                 $cahe = Cache::get($v[0]);
-                var_dump($cahe);die;
-                $temp = json_decode(Cache::get($v[0]),true);
                 $data[$k]['create_time'] = 1551577703;  //创建时间
                 $data[$k]['update_time'] = time();  //更新时间
                 $data[$k]['buy_status'] = 1;
                 $data[$k]['buy_not_num'] = 0;
-                if($temp){
+                if($cahe){
+                    $temp = json_decode($cahe,true);
+                    var_dump($temp);die;
                     echo '   1111';
                     $data[$k]['buy_not_num'] -= 1;
                     $data[$k]['fee'] = $temp['fee'];
