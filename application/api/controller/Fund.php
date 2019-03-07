@@ -34,6 +34,7 @@ class Fund extends Controller{
 	
 	// 每日录入基金数据 每晚10点添加
 	public function funList(){
+        set_time_limit(0);
 		$is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
 		if($is_gzr==0){
 			$url3 = $this->host3;
