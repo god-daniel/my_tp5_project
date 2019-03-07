@@ -81,28 +81,22 @@ class Fund extends Controller{
     //  更新基金,购买费,周增长，月增长等数据净值 每晚11点更新
     public function updateFundBase(){
         set_time_limit(0);
-        echo 'cc   ';
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
         if($is_gzr==0){
             $base = new FundBase;
             if(input('param.code')){
                 $where[] = array('code','=',input('param.code'));
             }
-            echo 'start   ';
             $where[] = array('1','=',1);
             $data = $base::where($where)->order('code asc')->select()->toArray();
             foreach ($data as $k=>$v){
-
-                echo $v['code'].'   ';
                 $cahe = Cache::get($v['code']);
                 $data[$k]['create_time'] = 1551577703;  //创建时间
                 $data[$k]['update_time'] = time();  //更新时间
                 $data[$k]['buy_status'] = 1;
-                $data[$k]['buy_not_num'] = 0;
+                $data[$k]['buy_not_num'] += 1;
                 if($cahe){
                     $temp = json_decode($cahe,true);
-                    var_dump($temp);die;
-                    echo '   1111';
                     $data[$k]['buy_not_num'] -= 1;
                     $data[$k]['fee'] = $temp['fee'];
                     $data[$k]['unit_value'] = $temp['unit_value'];
@@ -119,8 +113,6 @@ class Fund extends Controller{
                     $data[$k]['create_grow'] = $temp['create_grow'];
                     $data[$k]['buy_status'] = 0;
                 }
-                echo '   2222';
-                echo '</br>';
             }
             $base->saveAll($data);
         }
