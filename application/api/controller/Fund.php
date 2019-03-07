@@ -492,7 +492,7 @@ class Fund extends Controller{
         $url = 'http://fundgz.1234567.com.cn/js/000001.js?rt=1551755226377';
         Cache::set('zb','111111',7200);
         //$ch = HttpGet($url);
-        var_dump(Cache::get('zb'));
+        var_dump(Cache::get('001553'));
     }
     //  更新基金类型
     public function changeType(){
