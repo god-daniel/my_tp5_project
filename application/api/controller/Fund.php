@@ -122,6 +122,9 @@ class Fund extends Controller{
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
         if($is_gzr==0){
             $date = date('Y-m-d');
+            if(input('param.date')){
+                $date = input('param.date');
+            }
             $host = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/addHistoryFund?sdate='.$date.'&edate='.$date;
             $str = HttpGet($host);
             var_dump($host);
@@ -189,7 +192,7 @@ class Fund extends Controller{
             $page_num = 20000;
             if(input('param.page')){
                 $page = input('param.page');
-                $page_num = 2000;
+                $page_num = 1000;
             }
             if(input('param.ids')){
                 $where[] = array('id','in',input('param.ids'));
