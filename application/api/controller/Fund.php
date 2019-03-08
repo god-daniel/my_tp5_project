@@ -49,6 +49,7 @@ class Fund extends Controller{
 			$arr2 = explode(',',$infoList);
 			$history = new FundHistoryList;
 			$arr = [];
+			$day_arr = [];
 			$num = count($arr2)/25;
 			for ($x=0; $x<$num; $x++) {
 				$data['year'] = $year;
@@ -74,8 +75,16 @@ class Fund extends Controller{
 				$dayArr['zdy'] = ($arr2[$x*25+18]?$arr2[$x*25+18]:0)*10000;// 当前代表 昨日的日增长率
 				// 使用文件缓存
 				Cache::set($data['code'],json_encode($dayArr),7200);
+                $day_arr[$x]['code'] = $data['code'];
+                $day_arr[$x]['name'] = $data['name'];
+                $day_arr[$x]['unit_value'] = $data['unit_value'];
+                $day_arr[$x]['update_date'] = $data['update_date'];
+                $day_arr[$x]['unit_pile_value'] = $data['unit_pile_value'];
+                $day_arr[$x]['day_grow'] = $data['day_grow'];
 			}
-			$history->saveAll($arr);			
+            $day_mode = new FundDayList;
+			$history->saveAll($arr);
+            $day_mode->saveAll($day_arr);
 		}		
     }
     //  更新基金,购买费,周增长，月增长等数据净值 每晚10点30更新
@@ -115,19 +124,6 @@ class Fund extends Controller{
                 }
             }
             $base->saveAll($data);
-        }
-    }
-    //  添加今日基金数据  每晚10点10更新
-    public function addTodayFund(){
-        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
-        if($is_gzr==0){
-            $date = date('Y-m-d');
-            if(input('param.date')){
-                $date = input('param.date');
-            }
-            $host = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/addHistoryFund?sdate='.$date.'&edate='.$date;
-            $str = HttpGet($host);
-            var_dump($host);
         }
     }
     //  更新10日基金数据净值 每晚11点开始更新
@@ -279,7 +275,19 @@ class Fund extends Controller{
 			$base->saveAll($arr);
 		}
     }
-
+    //  添加今日基金数据
+    public function addTodayFund(){
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+        if($is_gzr==0){
+            $date = date('Y-m-d');
+            if(input('param.date')){
+                $date = input('param.date');
+            }
+            $host = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/addHistoryFund?sdate='.$date.'&edate='.$date;
+            $str = HttpGet($host);
+            var_dump($host);
+        }
+    }
     //  每周6更新基金数据
     public function updateFund(){
         set_time_limit(0);
@@ -516,7 +524,26 @@ class Fund extends Controller{
     }
     //  测试
     public function test(){
+        set_time_limit(0);
         $url = 'http://fundgz.1234567.com.cn/js/000001.js?rt=1551755226377';
+        $url1 = 'http://fund.eastmoney.com/fundguzhi.html';
+        $ch = HttpGet($url1);
+
+        $base_url = 'http://fund.eastmoney.com/fundguzhi.html#splittable_1';
+        $rules = [
+            //一个规则只能包含一个function
+            //采集class为pt30的div的第一个h1文本
+            // 'all_html' => ['.r_cont','html'],.r_cont>.basic-new>.bs_jz>
+            'tt' => ['#tableContent','html'],
+        ];
+        $ql = QueryList::get($base_url,null,[
+            'timeout' => 3600]);
+        $data = $ql->rules($rules)->query()->getData()->all();
+        var_dump($data);die;
+        $times = time();
+        $url2 = 'http://api.fund.eastmoney.com/FundGuZhi/GetFundGZList?type=1&sort=3&orderType=asc&canbuy=0&pageIndex=1&pageSize=200&callback=jQuery183018859879775880506_'.$times.'000&_='.($times+3).'000';
+        $bb = HttpGet($url2);
+        var_dump($bb);die;
         Cache::set('zb','111111',7200);
         //$ch = HttpGet($url);
         $temp = json_decode(Cache::get('001553'),true);
@@ -524,6 +551,13 @@ class Fund extends Controller{
         if($temp){
             var_dump(22222);die;
         }
+    }
+
+    //  删除无效的信息
+    public function deletOther(){
+        set_time_limit(0);
+        $day_list = new FundDayList();
+        $data = $day_list::where('update_date','like','%暂无%')->select();
     }
     //  更新基金类型
     public function changeType(){
