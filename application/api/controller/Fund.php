@@ -189,13 +189,10 @@ class Fund extends Controller{
             $page_num = 20000;
             if(input('param.page')){
                 $page = input('param.page');
-                $page_num = 200;
+                $page_num = 2000;
             }
             if(input('param.ids')){
                 $where[] = array('id','in',input('param.ids'));
-            }
-            if(input('param.bs')){
-                $where[] = array('buy_status','=',input('param.bs'));
             }
             if(input('param.grow')){
                 $where[] = array('grow','<',input('param.grow'));
@@ -514,7 +511,7 @@ class Fund extends Controller{
         }
         $day_list->saveAll($arr);
     }
-    //  更新基金类型
+    //  测试
     public function test(){
         $url = 'http://fundgz.1234567.com.cn/js/000001.js?rt=1551755226377';
         Cache::set('zb','111111',7200);
