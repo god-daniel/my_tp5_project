@@ -148,18 +148,31 @@ class Fund extends Controller{
             $base = new FundBase;
             $data = $base::where($where)->order('code asc')->select()->toArray();
             $day_base = new FundDayList();
+            $yugu_data[] = array();
             foreach ($data as $k=>$v){
                 $map[] = array('code','=',$v['code']);
                 $day_data = $day_base::where('code','=', $v['code'])->limit(10)
                     ->order('update_date desc')->select()->toArray();
                 $data[$k]['create_time'] = 1551577703;  //创建时间
                 $data[$k]['update_time'] = time();  //更新时间
+                $weight = $this->get_weight($v);
+                $data[$k]['weight']=$weight['weight'];
+                $data[$k]['buy_weight']=$weight['buy_weight'];
+                $data[$k]['sell_weight']=$weight['sell_weight'];
+                $data[$k]['grow_status']=$weight['grow_status'];
                 foreach ($day_data as $kk=>$vv){
                     $data[$k]['num_'.($kk+1).'_value'] = $vv['unit_value'];
                     $data[$k]['num_'.($kk+1).'_date'] = $vv['update_date'];
+                    if($kk==0){
+                        $yugu_data[$k]['id'] = $vv['id'];
+                        $yugu_data[$k]['yugu_unit_value'] = $data[$k]['unit_value'];
+                        $yugu_data[$k]['yugu_day_grow'] = $data[$k]['day_grow'];
+                        $yugu_data[$k]['yugu_update_date'] = $data[$k]['update_date'];
+                    }
                 }
             }
             $base->saveAll($data);
+            $day_base->saveAll($yugu_data);
         }
     }
     //  我的基金列表
@@ -214,6 +227,7 @@ class Fund extends Controller{
                 $arr[$k]['id'] = $v['id'];
                 $arr[$k]['code'] = $v['code'];
                 $arr[$k]['buy_status'] = 1;
+                $arr[$k]['amend_weight'] = 0;
                 $url = str_replace('$code',$code,$base_url);
                 $str = HttpGet($url);
                 if($str){
@@ -224,6 +238,13 @@ class Fund extends Controller{
                     $arr[$k]['update_date'] = $data['gztime'];
                     $arr[$k]['unit_value'] = $data['gsz']*10000;
                     $arr[$k]['grow'] = $data['gszzl']*10000;
+
+                    $temp['week_grow']=$arr[$k]['grow']+$v['week_grow'];
+                    $temp['month_grow']=$arr[$k]['grow']+$v['month_grow'];
+                    $temp['month_three_grow']=$arr[$k]['grow']+$v['month_three_grow'];
+                    $amend_weight = $this->get_weight($temp);
+                    $arr[$k]['amend_weight']+=$amend_weight['weight'];
+                    $arr[$k]['grow_weight']=$data['gszzl']*100;
                 }
             }
             $base->saveAll($arr);
@@ -525,32 +546,43 @@ class Fund extends Controller{
     //  测试
     public function test(){
         set_time_limit(0);
-        $url = 'http://fundgz.1234567.com.cn/js/000001.js?rt=1551755226377';
-        $url1 = 'http://fund.eastmoney.com/fundguzhi.html';
-        $ch = HttpGet($url1);
-
-        $base_url = 'http://fund.eastmoney.com/fundguzhi.html#splittable_1';
-        $rules = [
-            //一个规则只能包含一个function
-            //采集class为pt30的div的第一个h1文本
-            // 'all_html' => ['.r_cont','html'],.r_cont>.basic-new>.bs_jz>
-            'tt' => ['#tableContent','html'],
-        ];
-        $ql = QueryList::get($base_url,null,[
-            'timeout' => 3600]);
-        $data = $ql->rules($rules)->query()->getData()->all();
-        var_dump($data);die;
-        $times = time();
-        $url2 = 'http://api.fund.eastmoney.com/FundGuZhi/GetFundGZList?type=1&sort=3&orderType=asc&canbuy=0&pageIndex=1&pageSize=200&callback=jQuery183018859879775880506_'.$times.'000&_='.($times+3).'000';
-        $bb = HttpGet($url2);
-        var_dump($bb);die;
-        Cache::set('zb','111111',7200);
-        //$ch = HttpGet($url);
-        $temp = json_decode(Cache::get('001553'),true);
-        var_dump($temp);
-        if($temp){
-            var_dump(22222);die;
+        $base = new FundBase;
+        if(input('param.code')){
+            $where[] = array('code','=',input('param.code'));
         }
+        $where[] = array('buy_status','=',0);
+        $all_data = $base::where($where)->order('code asc')
+            ->select()->toArray();
+        foreach ($all_data as $k=>$v){
+            $cahe = Cache::get($v['code']);
+            $all_data[$k]['create_time'] = 1551577703;  //创建时间
+            $all_data[$k]['update_time'] = time();  //更新时间
+            $all_data[$k]['weight'] = 0;
+            $all_data[$k]['buy_weight'] = 0;
+            $all_data[$k]['sell_weight'] = 0;
+            $all_data[$k]['amend_weight'] = 0;
+            $all_data[$k]['grow_status'] = 1;
+            if($cahe){
+                $temp = json_decode($cahe,true);
+                $weight = $this->get_weight($v);
+
+                $now_grow = $v['day_grow'];
+                //$now_grow = 0;
+                //if($all_data[$k]['num_2_value']>0){
+                 //   $now_grow = floor(($all_data[$k]['num_1_value']-$all_data[$k]['num_2_value'])/$all_data[$k]['num_2_value']*10000);
+                //}
+                $temp['week_grow']+=$now_grow;
+                $temp['month_grow']+=$now_grow;
+                $temp['month_three_grow']+=$now_grow;
+                $amend_weight = $this->get_weight($temp);
+                $all_data[$k]['weight']=$weight['weight'];
+                $all_data[$k]['buy_weight']+=$weight['buy_weight'];
+                $all_data[$k]['sell_weight']+=$weight['sell_weight'];
+                $all_data[$k]['grow_status']=$weight['grow_status'];
+                $all_data[$k]['amend_weight']+=$amend_weight['weight'];
+            }
+        }
+        $base->saveAll($all_data);
     }
 
     //  删除无效的信息
@@ -569,6 +601,27 @@ class Fund extends Controller{
         }
         $base->saveAll($all_data);
     }
+
+    //  设置缓存
+    public function setCache(){
+        $date = date("Y-m-d");
+        if(input('param.date')){
+            $date = input('param.date');
+        }
+        if(input('param.code')){
+            $where[] = array('code','=',input('param.code'));
+        }
+        $where[] = array('update_date','=',$date);
+        $base = new FundHistoryList;
+        $data = $base::where($where)
+            ->select()->toArray();
+        foreach ($data as $k=>$v){
+            Cache::set($v['code'],json_encode($v),3600);
+        }
+        var_dump($data);
+        $cahe = Cache::get('001553');
+        var_dump($cahe);
+    }
     //  我的基金列表
     public function myFund(){
         $data = Db::table('sp_my_fund')
@@ -577,6 +630,29 @@ class Fund extends Controller{
             ->field('m.*,b.name,b.fee,b.unit_value,b.grow,b.sell_1_fee,b.sell_2_fee,b.sell_1_day,b.sell_2_day,b.num_1_grow,b.num_2_grow,b.num_3_grow,b.num_4_grow,b.num_5_grow')
             ->select();
         var_dump($data);
+    }
+
+    //  得到基准权重 $data 一维数组
+    public function get_weight($data){
+        $weight = array();
+        $weight['grow_status'] = 1;
+        if($data['week_grow']<0||$data['month_grow']<0||$data['month_three_grow']<0){
+            $weight['grow_status'] = 0;  //下降趋势
+        }
+        if(0<$data['week_grow']&&(2*$data['week_grow'])<$data['month_grow']){
+            $weight['grow_status'] = 2;  //上升趋势
+        }
+        $weight['weight'] = (floor($data['week_grow']/700)+floor($data['month_grow']/3000)+floor($data['month_three_grow']/9000))/100+($weight['grow_status']-1)*2;
+
+        $weight['sell_weight'] = $weight['weight'];
+        $weight['buy_weight'] = $weight['weight'];
+        if($data['day_grow']>0){
+            $weight['sell_weight'] = $weight['weight']+floor($data['day_grow']/100)/100;
+        }else{
+            $weight['buy_weight'] = $weight['weight']-floor($data['day_grow']/100)/100;
+        }
+
+        return $weight;
     }
 	//  是否交易日
 	public function is_jiaoyi_day($times=''){
