@@ -552,7 +552,7 @@ class Fund extends Controller{
     }
     //  更新我持有的基金数据  持有天数，收益率
     public function todayMyFund(){
-        // http://www.daniel.com/api/fund/getSellFund
+        // http://www.daniel.com/api/fund/todayMyFund
         $base = new MyFund;
         $data = Db::table('sp_my_fund')
             ->alias('m')
