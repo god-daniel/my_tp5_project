@@ -160,6 +160,7 @@ class Fund extends Controller{
                 $data[$k]['buy_weight']=$weight['buy_weight'];
                 $data[$k]['sell_weight']=$weight['sell_weight'];
                 $data[$k]['grow_status']=$weight['grow_status'];
+                $data[$k]['sell_diff_buy_weight'] = $data[$k]['sell_weight']-$data[$k]['buy_weight'];
                 foreach ($day_data as $kk=>$vv){
                     $data[$k]['num_'.($kk+1).'_value'] = $vv['unit_value'];
                     $data[$k]['num_'.($kk+1).'_date'] = $vv['update_date'];
@@ -228,6 +229,7 @@ class Fund extends Controller{
                 $arr[$k]['code'] = $v['code'];
                 $arr[$k]['buy_status'] = 1;
                 $arr[$k]['amend_weight'] = 0;
+                $arr[$k]['grow_weight']= 0;
                 $url = str_replace('$code',$code,$base_url);
                 $str = HttpGet($url);
                 if($str){
@@ -239,12 +241,16 @@ class Fund extends Controller{
                     $arr[$k]['unit_value'] = $data['gsz']*10000;
                     $arr[$k]['grow'] = $data['gszzl']*10000;
 
+                    $temp['day_grow']=$v['day_grow'];
                     $temp['week_grow']=$arr[$k]['grow']+$v['week_grow'];
                     $temp['month_grow']=$arr[$k]['grow']+$v['month_grow'];
                     $temp['month_three_grow']=$arr[$k]['grow']+$v['month_three_grow'];
                     $amend_weight = $this->get_weight($temp);
                     $arr[$k]['amend_weight']+=$amend_weight['weight'];
                     $arr[$k]['grow_weight']=$data['gszzl']*100;
+                    $arr[$k]['diff_weight'] = $v['weight']-$arr[$k]['amend_weight'];
+                    $arr[$k]['sell_diff_buy_weight'] = $v['sell_weight']-$v['buy_weight'];
+
                 }
             }
             $base->saveAll($arr);
@@ -545,6 +551,7 @@ class Fund extends Controller{
     }
     //  测试
     public function test(){
+        var_dump(111);die;
         set_time_limit(0);
         $base = new FundBase;
         if(input('param.code')){
@@ -562,8 +569,8 @@ class Fund extends Controller{
             $all_data[$k]['sell_weight'] = 0;
             $all_data[$k]['amend_weight'] = 0;
             $all_data[$k]['grow_status'] = 1;
-            if($cahe){
-                $temp = json_decode($cahe,true);
+            if($cahe||1){
+                //$temp = json_decode($cahe,true);
                 $weight = $this->get_weight($v);
 
                 $now_grow = $v['day_grow'];
@@ -571,15 +578,15 @@ class Fund extends Controller{
                 //if($all_data[$k]['num_2_value']>0){
                  //   $now_grow = floor(($all_data[$k]['num_1_value']-$all_data[$k]['num_2_value'])/$all_data[$k]['num_2_value']*10000);
                 //}
-                $temp['week_grow']+=$now_grow;
-                $temp['month_grow']+=$now_grow;
-                $temp['month_three_grow']+=$now_grow;
-                $amend_weight = $this->get_weight($temp);
+                //$temp['week_grow']+=$now_grow;
+                //$temp['month_grow']+=$now_grow;
+                //$temp['month_three_grow']+=$now_grow;
+                //$amend_weight = $this->get_weight($temp);
                 $all_data[$k]['weight']=$weight['weight'];
                 $all_data[$k]['buy_weight']+=$weight['buy_weight'];
                 $all_data[$k]['sell_weight']+=$weight['sell_weight'];
                 $all_data[$k]['grow_status']=$weight['grow_status'];
-                $all_data[$k]['amend_weight']+=$amend_weight['weight'];
+                //$all_data[$k]['amend_weight']+=$amend_weight['weight'];
             }
         }
         $base->saveAll($all_data);
@@ -630,6 +637,90 @@ class Fund extends Controller{
             ->field('m.*,b.name,b.fee,b.unit_value,b.grow,b.sell_1_fee,b.sell_2_fee,b.sell_1_day,b.sell_2_day,b.num_1_grow,b.num_2_grow,b.num_3_grow,b.num_4_grow,b.num_5_grow')
             ->select();
         var_dump($data);
+    }
+
+    //  得到今日可买基金列表
+    public function getBuyFund(){
+        // http://www.daniel.com/api/fund/getBuyFund?w=4&bw=6&sw=6&fee=0.15
+        $base = new FundBase;
+        $where[] = array('diff_weight','>=',0);
+        $where[] = array('diff_weight','<=',1);
+        $where[] = array('buy_status','=',0);
+        $where[] = array('weight','>',2.5);
+        $where[] = array('sell_diff_buy_weight','<',2.5);
+        $sort_code = 'weight';
+        $sort_type = 'desc';
+        if(input('param.sd')){
+            $sort_code = input('param.sd');
+        }
+        if(input('param.st')){
+            $sort_type = input('param.st');
+        }
+        $sort = $sort_code.' '.$sort_type;
+        if(input('param.code')){
+            $where[] = array('code','=',input('param.code'));
+        }
+        if(input('param.bw')){
+            $where[] = array('buy_weight','>',input('param.bw'));
+        }
+        if(input('param.w')){
+            $where[] = array('weight','>',input('param.w'));
+        }
+        if(input('param.dw')){
+            $where[] = array('diff_weight','>=',input('param.dw'));
+        }
+        if(input('param.sw')){
+            $where[] = array('sell_weight','<',input('param.sw'));
+        }
+        if(input('param.sbw')){
+            $where[] = array('sell_diff_buy_weight','<',input('param.sbw'));
+        }
+        if(input('param.fee')){
+            $where[] = array('fee','<=',input('param.fee')*10000);
+        }
+        $temp_diff = $base::field('code')->where($where)->limit(20)->order('diff_weight desc,weight asc')
+            ->select()->toArray();
+        $temp_ab = $base::field('code,(buy_weight-grow_weight) as a_buy_weight')->where($where)->limit(20)->order('a_buy_weight desc')
+            ->select()->toArray();
+        $temp_aw = $base::field('code')->where($where)->limit(20)->order('amend_weight desc')
+            ->select()->toArray();
+        $str_diff = '';$str_ab = '';$str_aw = '';
+        foreach ($temp_diff as $kk=>$vv){
+            $str_diff.=$vv['code'].'  ';
+        }
+        foreach ($temp_ab as $kk=>$vv){
+            $str_ab.=$vv['code'].'  ';
+        }
+        foreach ($temp_aw as $kk=>$vv){
+            $str_aw.=$vv['code'].'  ';
+        }
+        $str_diff = rtrim($str_diff);
+        $str_ab = rtrim($str_ab);
+        $str_aw = rtrim($str_aw);
+        $diff_arr = explode('  ',$str_diff);
+        $ab_arr = explode('  ',$str_ab);
+        $aw_arr = explode('  ',$str_aw);
+        $arr = array_intersect($diff_arr,$ab_arr,$aw_arr);
+        var_dump($arr);
+        $all_data = $base::field('*,(buy_weight-grow_weight) as a_buy_weight')->where($where)->order($sort)
+            ->select()->toArray();
+        echo '总数据:'.count($all_data);
+        echo '</br>';
+        echo '</br>';
+        echo '修正差值排序:'.$str_diff;
+        echo '</br>';
+        echo '</br>';
+        echo '修正买值排序:'.$str_ab;
+        echo '</br>';
+        echo '</br>';
+        echo '修值排序:'.$str_aw;
+        echo '</br>';
+        echo '</br>';
+        foreach ($all_data as $k=>$v){
+            echo '编码:'.$v['code'].'  权重:'.$v['weight'].'  修正差值:'.$v['diff_weight'].'  买权重:'.$v['buy_weight'].'  修正买权重:'.$v['a_buy_weight'].'  卖权重:'.$v['sell_weight'].'  费率%:'.$v['fee']/10000;
+            echo '</br>';
+            echo '</br>';
+        }
     }
 
     //  得到基准权重 $data 一维数组
