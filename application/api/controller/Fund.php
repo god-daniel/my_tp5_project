@@ -564,7 +564,7 @@ class Fund extends Controller{
         foreach ($data as $k => $v){
             if($v['num_1_date'] == $v['buy_date']){
                 $data[$k]['buy_fund_value'] = $v['num_1_value'];
-                $t = $data[$k]['buy_fund_money']/$data[$k]['buy_fund_value'];
+                $t = ($data[$k]['buy_fund_money']/$data[$k]['buy_fund_value'])*10000;
                 $data[$k]['buy_fund_num'] = round($t,2);
             }
             $data[$k]['day_nums'] = (strtotime($today)-strtotime($v['buy_date']))/86400;
