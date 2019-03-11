@@ -9,6 +9,7 @@
 namespace app\api\controller;
 use QL\QueryList;
 use think\Controller;
+use app\common\model\MyFund;
 use app\common\model\FundBaseList;
 use app\common\model\FundBase;
 use app\common\model\FundDayList;
@@ -176,7 +177,7 @@ class Fund extends Controller{
             $day_base->saveAll($yugu_data);
         }
     }
-    //  我的基金列表
+    //  实时更新我持有的基金列表估值
     public function updateMyFund(){
         set_time_limit(0);
         $where[] = array('my_fund_status','=',1);
@@ -549,6 +550,24 @@ class Fund extends Controller{
         }
         $day_list->saveAll($arr);
     }
+    //  更新我持有的基金数据  持有天数，收益率
+    public function todayMyFund(){
+        // http://www.daniel.com/api/fund/getSellFund
+        $base = new MyFund;
+        $data = Db::table('sp_my_fund')
+            ->alias('m')
+            ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
+            ->field('m.my_id,m.my_fund_code,m.buy_date,m.day_nums,m.buy_fund_value,m.yields,b.num_1_value')
+            ->where('m.my_fund_status','=',1)
+            ->select();
+        $today = date("Y-m-d");
+        foreach ($data as $k => $v){
+            $data[$k]['day_nums'] = (strtotime($today)-strtotime($v['buy_date']))/86400;
+            $yields = ($v['num_1_value']-$v['buy_fund_value'])/$v['buy_fund_value'];
+            $data[$k]['yields'] = round($yields,4)*100;
+        }
+        $base->saveAll($data);
+    }
     //  测试
     public function test(){
         var_dump(111);die;
@@ -641,13 +660,13 @@ class Fund extends Controller{
 
     //  得到今日可买基金列表
     public function getBuyFund(){
-        // http://www.daniel.com/api/fund/getBuyFund?w=4&bw=6&sw=6&fee=0.15
+        // http://www.daniel.com/api/fund/getBuyFund?w=2.9&bw=1&sw=9&sd=diff_weight
         $base = new FundBase;
-        $where[] = array('diff_weight','>=',0);
+        $where[] = array('diff_weight','>',-0.1);
         $where[] = array('diff_weight','<=',1);
         $where[] = array('buy_status','=',0);
-        $where[] = array('weight','>',2.5);
-        $where[] = array('sell_diff_buy_weight','<',2.5);
+        //$where[] = array('weight','>',2.5);
+        //$where[] = array('sell_diff_buy_weight','<',2.5);
         $sort_code = 'weight';
         $sort_type = 'desc';
         if(input('param.sd')){
@@ -666,8 +685,8 @@ class Fund extends Controller{
         if(input('param.w')){
             $where[] = array('weight','>',input('param.w'));
         }
-        if(input('param.dw')){
-            $where[] = array('diff_weight','>=',input('param.dw'));
+        if(input('param.aw')){
+            $where[] = array('amend_weight','>',input('param.aw'));
         }
         if(input('param.sw')){
             $where[] = array('sell_weight','<',input('param.sw'));
@@ -678,7 +697,7 @@ class Fund extends Controller{
         if(input('param.fee')){
             $where[] = array('fee','<=',input('param.fee')*10000);
         }
-        $temp_diff = $base::field('code')->where($where)->limit(20)->order('diff_weight desc,weight asc')
+        $temp_diff = $base::field('code')->where($where)->limit(20)->order('diff_weight desc')
             ->select()->toArray();
         $temp_ab = $base::field('code,(buy_weight-grow_weight) as a_buy_weight')->where($where)->limit(20)->order('a_buy_weight desc')
             ->select()->toArray();
@@ -701,28 +720,43 @@ class Fund extends Controller{
         $ab_arr = explode('  ',$str_ab);
         $aw_arr = explode('  ',$str_aw);
         $arr = array_intersect($diff_arr,$ab_arr,$aw_arr);
-        var_dump($arr);
+        //var_dump($arr);
         $all_data = $base::field('*,(buy_weight-grow_weight) as a_buy_weight')->where($where)->order($sort)
             ->select()->toArray();
         echo '总数据:'.count($all_data);
         echo '</br>';
         echo '</br>';
-        echo '修正差值排序:'.$str_diff;
-        echo '</br>';
-        echo '</br>';
-        echo '修正买值排序:'.$str_ab;
-        echo '</br>';
-        echo '</br>';
-        echo '修值排序:'.$str_aw;
+        echo 'desc与a_buy_weight与amend_weight desc 交集:'.implode($arr, ' ');
         echo '</br>';
         echo '</br>';
         foreach ($all_data as $k=>$v){
-            echo '编码:'.$v['code'].'  权重:'.$v['weight'].'  修正差值:'.$v['diff_weight'].'  买权重:'.$v['buy_weight'].'  修正买权重:'.$v['a_buy_weight'].'  卖权重:'.$v['sell_weight'].'  费率%:'.$v['fee']/10000;
+            echo '编码:'.$v['code'].'  权重:'.$v['weight'].'  修正差值:'.$v['diff_weight'].'  买权重:'.$v['buy_weight'].'  修正买权重:'.round($v['a_buy_weight'],2).'  卖权重:'.$v['sell_weight'].'  费率%:'.($v['fee']/10000).'  今日预增长: '.$v['grow_weight'];
             echo '</br>';
             echo '</br>';
         }
     }
 
+    //  得到今日可卖基金列表
+    public function getSellFund(){
+        // http://www.daniel.com/api/fund/getSellFund
+        $data = Db::table('sp_my_fund')
+            ->alias('m')
+            ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
+            ->field('m.*,b.name,b.fee,b.day_grow,b.grow_status,b.grow,b.unit_value,b.amend_weight,b.sell_weight,b.grow_weight')
+            ->where('m.my_fund_status','=',1)
+            ->order('sell_weight desc')
+            ->select();
+        echo '总数据:'.count($data);
+        echo '</br>';
+        echo '</br>';
+        foreach ($data as $k=>$v){
+            $t = ($v['unit_value']-$v['buy_fund_value'])/$v['buy_fund_value'];
+            $yields = round($t,4)*100;
+            echo '编码:'.$v['my_fund_code'].'  购买日期:'.$v['buy_date'].'  卖权重:'.$v['sell_weight'].'  修正卖权重:'.round(($v['sell_weight']+$v['grow_weight']),2).'  费率%:'.($v['fee']/10000).'  持有天数: '.$v['day_nums'].'  今日预增长%: '.$v['grow_weight'].'  今日预收益%: '.$yields;
+            echo '</br>';
+            echo '</br>';
+        }
+    }
     //  得到基准权重 $data 一维数组
     public function get_weight($data){
         $weight = array();
