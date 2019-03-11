@@ -247,7 +247,7 @@ class Fund extends Controller{
                     $temp['month_three_grow']=$arr[$k]['grow']+$v['month_three_grow'];
                     $amend_weight = $this->get_weight($temp);
                     $arr[$k]['amend_weight']+=$amend_weight['weight'];
-                    $arr[$k]['grow_weight']=$data['gszzl']*100;
+                    $arr[$k]['grow_weight']=$data['gszzl'];
                     $arr[$k]['diff_weight'] = $v['weight']-$arr[$k]['amend_weight'];
                     $arr[$k]['sell_diff_buy_weight'] = $v['sell_weight']-$v['buy_weight'];
 
