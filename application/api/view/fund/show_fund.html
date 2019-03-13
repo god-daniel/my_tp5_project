@@ -32,6 +32,7 @@
     <h1 align="center">111</h1>
     <input type="hidden" name="pq_url" value="{$pq_url}" />
     <input type="hidden" name="do_url" value="{$do_url}" />
+    <img src="http://fund.mankkk.cn/api/qr/qrcode?data=http://www.baidu.com"  alt="上海鲜花港 - 郁金香" width="200px;height:200px" />
 </div>
 <script type="text/javascript">
 $(document).ready(function (){
@@ -58,16 +59,15 @@ $(document).ready(function (){
                     dataType: 'json',  //类型
                     data: data,
                     success : function(json){
-                        alert(2)
                     },
                     error:function(){
-                        alert('fail');
+                        console.log('fail-2');
                     }
                 })
             }
         },
         error:function(){
-            alert('fail');
+            console.log('fail-1');
         }
     })
 });
