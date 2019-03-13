@@ -637,18 +637,97 @@ class Fund extends Controller{
     //  jsonp 页面
     public function doFund(){
         $list = input('param.list');
-        $i = 0;
-        foreach ($list as $k=>$v) {
-            $i += 1;
+        set_time_limit(0);
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+        if($is_gzr==0){
+            $base = new FundBase;
+            $where[] = array('buy_status','in','0,2');
+            $all_data = $base::where($where)->order('code asc')
+                ->select()->toArray();
+            $arr = [];
+            foreach ($all_data as $k=>$v){
+                $arr[$k]['create_time'] = 1551577703;  //创建时间
+                $arr[$k]['update_time'] = time();  //更新时间
+                $arr[$k]['id'] = $v['id'];
+                $arr[$k]['code'] = $v['code'];
+                $arr[$k]['buy_status'] = 1;
+                $arr[$k]['amend_weight'] = 0;
+                $arr[$k]['grow_weight']= 0;
+                $arr[$k]['type_desc'] = '';
+                //$arr[$k]['fee'] = 10000;
+                $arr[$k]['update_date'] = date("Y-m-d");
+                $arr[$k]['unit_value'] = 10000;
+                $arr[$k]['grow'] = 0;
+                $arr[$k]['amend_weight']=0;
+                $arr[$k]['grow_weight']=0;
+                $arr[$k]['diff_weight'] = 0;
+                $arr[$k]['sell_weight']=0;
+                $arr[$k]['buy_weight']=0;
+                $arr[$k]['sell_diff_buy_weight'] = 0;
+                foreach ($list as $kk=>$vv) {
+                    if($v['code']==$vv['bzdm']){
+                        $arr[$k]['buy_status'] = 0;
+                        $arr[$k]['type_desc'] = $vv['FType'];
+                        //$arr[$k]['fee'] = $vv['Rate']*10000;
+                        if($vv['gszzl']=='---'||$vv['jzzzl']=='---'){
+                            $arr[$k]['buy_status'] = 2;
+                            unset($list[$kk]);
+                            break;
+                        }
+                        $arr[$k]['update_date'] = $vv['gxrq'];
+                        $arr[$k]['unit_value'] = $vv['gsz']*10000;
+                        $arr[$k]['grow'] = $vv['gszzl']*10000;
+
+                        $temp['day_grow']=$v['day_grow'];
+                        $temp['week_grow']=$arr[$k]['grow']+$v['week_grow'];
+                        $temp['month_grow']=$arr[$k]['grow']+$v['month_grow'];
+                        $temp['month_three_grow']=$arr[$k]['grow']+$v['month_three_grow'];
+                        $amend_weight = $this->get_weight($temp);
+                        $arr[$k]['amend_weight']+=$amend_weight['weight'];
+                        $arr[$k]['grow_weight']=$vv['gszzl']*1;
+                        $arr[$k]['diff_weight'] = $v['weight']-$arr[$k]['amend_weight'];
+                        if($vv['jzzzl']*1>0){
+                            $arr[$k]['sell_weight']=$arr[$k]['amend_weight']+$vv['jzzzl']*1;
+                        }else{
+                            $arr[$k]['buy_weight']=$arr[$k]['amend_weight']-$vv['jzzzl']*1;
+                        }
+                        $arr[$k]['sell_weight']+=$vv['gszzl']*1;
+                        $arr[$k]['buy_weight']+=$vv['gszzl']*1;
+                        $arr[$k]['sell_diff_buy_weight'] = $arr[$k]['sell_weight']-$arr[$k]['buy_weight'];
+                        unset($list[$kk]);
+                        break;
+                    }
+                }
+            }
+            //return 2;
+            //Cache::set('data',json_encode($arr),3600);
+            $save = $base->saveAll($arr);
         }
-        return $i;
+        return 1;
     }
     //  测试
     public function tesst(){
-       $cb = Cache::get('cb');
-       $cc = Cache::get('sortType');
-       var_dump($cb);
-        var_dump($cc);
+        set_time_limit(0);
+        $base = new FundBase;
+        $str = Cache::get('data');
+        $arr = json_decode($str,true);
+        //$all_data = $base::where($where)->order('code asc')->select()->toArray();
+        var_dump($arr);
+        $bool = $base->saveAll($arr);
+        var_dump($bool);
+        $arr = array('1','2','3','4','5','6');
+        $arr2 = array('1','3','4','5','6');
+        $i = 0;
+        foreach ($arr as $k=>$v) {
+            foreach ($arr2 as $kk=>$vv) {
+                $i += 1;
+                if($vv==$v){
+                    unset($arr2[$kk]);
+                    break;
+                }
+            }
+        }
+        var_dump($i);
     }
     //  删除无效的信息
     public function deletOther(){

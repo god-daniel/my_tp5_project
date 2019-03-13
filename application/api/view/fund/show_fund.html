@@ -49,6 +49,15 @@ $(document).ready(function (){
         success : function(json){
             if(json.ErrCode == 0){
                 var data = json.Data
+/*                var fso;
+                try {
+                    fso=new ActiveXObject("Scripting.FileSystemObject");
+                } catch (e) {
+                    alert("当前浏览器不支持");
+                    return;
+                }
+                var f=fso.createtextfile("todayFund.txt",2,true);
+                f.write('111');*/
                 $.ajax({
                     type: 'POST',  //这里用GET
                     headers: {
