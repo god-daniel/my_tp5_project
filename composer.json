@@ -19,6 +19,7 @@
         "php": ">=7.0.0",
         "topthink/framework": "5.1.*",
 		"topthink/think-migration": "^2.0",
+        "endroid/qr-code": "^2.5.1",
 		"lcobucci/jwt": "^3.2",
         "firebase/php-jwt": "^5.0",
         "jaeger/querylist": "^4.0",

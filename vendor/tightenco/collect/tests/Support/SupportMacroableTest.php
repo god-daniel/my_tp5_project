@@ -16,7 +16,7 @@ class SupportMacroableTest extends TestCase
 
     private function createObjectForTrait()
     {
-        return new EmptyMacroable;
+        return $this->getObjectForTrait(Macroable::class);
     }
 
     public function testRegisterMacro()
@@ -60,11 +60,6 @@ class SupportMacroableTest extends TestCase
         $instance = new TestMacroable;
         $this->assertEquals('instance-Adam', $instance->methodOne('Adam'));
     }
-}
-
-class EmptyMacroable
-{
-    use Macroable;
 }
 
 class TestMacroable

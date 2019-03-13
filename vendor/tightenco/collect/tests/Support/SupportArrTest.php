@@ -498,14 +498,6 @@ class SupportArrTest extends TestCase
         $this->assertEquals(['products' => ['desk' => ['price' => 200]]], $array);
     }
 
-    public function testShuffleWithSeed()
-    {
-        $this->assertEquals(
-            Arr::shuffle(range(0, 100, 10), 1234),
-            Arr::shuffle(range(0, 100, 10), 1234)
-        );
-    }
-
     public function testSort()
     {
         $unsorted = [
@@ -670,6 +662,5 @@ class SupportArrTest extends TestCase
         $this->assertEquals(['a'], Arr::wrap($string));
         $this->assertEquals($array, Arr::wrap($array));
         $this->assertEquals([$object], Arr::wrap($object));
-        $this->assertEquals([], Arr::wrap(null));
     }
 }
