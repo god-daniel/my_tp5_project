@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>爬取基金数据中转页面</title>
+    <meta charset="UTF-8">
+    <meta name="keywords" content="欢迎进入IT开发者云平台！">
+    <meta name="description" content="欢迎进入IT开发者云平台！">
+    <link href="/favicon.ico" rel="icon" type="image/x-icon">
+    <style type="text/css">
+        body {
+            color: #333333;
+            font-family: tahoma, arial, 宋体, helvetica, sans-serif;
+            line-height: 400px;
+        }
+
+        .links {
+            color: #009900
+        }
+
+        #main {
+            margin-top: 50px;
+            margin-right: auto;
+            margin-left: auto;
+            width: 80%;
+        }
+    </style>
+    <title></title>
+	<script src="/static/js/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+<div id="main">
+    <h1 align="center">111</h1>
+    <input type="hidden" name="pq_url" value="{$pq_url}" />
+    <input type="hidden" name="do_url" value="{$do_url}" />
+</div>
+<script type="text/javascript">
+$(document).ready(function (){
+    var pq_url = $("input[name='pq_url']").val()
+    var do_url = $("input[name='do_url']").val()
+    $.ajax({
+        type: 'GET',  //这里用GET
+        headers: {
+            'Content-Type':'application/json; charset=utf-8'
+        },
+        url: pq_url,
+        dataType: 'jsonp',  //类型
+        data: {},
+        jsonp: 'callback', //jsonp回调参数，必需
+        success : function(json){
+            if(json.ErrCode == 0){
+                var data = json.Data
+                $.ajax({
+                    type: 'POST',  //这里用GET
+                    headers: {
+                        'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'
+                    },
+                    url: do_url,
+                    dataType: 'json',  //类型
+                    data: data,
+                    success : function(json){
+                        alert(2)
+                    },
+                    error:function(){
+                        alert('fail');
+                    }
+                })
+            }
+        },
+        error:function(){
+            alert('fail');
+        }
+    })
+});
+</script>
+</body>
+</html>

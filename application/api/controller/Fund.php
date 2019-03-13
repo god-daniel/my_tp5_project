@@ -16,6 +16,7 @@ use app\common\model\FundDayList;
 use app\common\model\FundHistoryList;
 use think\Db;
 use think\facade\Cache;
+use \think\View;
 
 class Fund extends Controller{
     private $pageNo;
@@ -615,7 +616,40 @@ class Fund extends Controller{
         }
         $base->saveAll($all_data);
     }
-
+    //  jsonp 页面
+    public function cronFund(){
+        set_time_limit(0);
+        $host = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/showFund';
+        $str = HttpGet($host);
+        //$bb = file_get_contents($host);
+        var_dump($str);
+        $cb = Cache::get('cb');
+        var_dump($host);
+    }
+    //  jsonp 页面
+    public function showFund(){
+        $pq_url = 'http://api.fund.eastmoney.com/FundGuZhi/GetFundGZList?type=1&sort=1&orderType=asc&canbuy=1&pageIndex=1&pageSize=20000'; // 请求地址 爬取数据
+        $do_url = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/doFund'; // 请求地址 处理数据
+        $this->assign('pq_url', $pq_url);
+        $this->assign('do_url', $do_url);
+        return $this->fetch();
+    }
+    //  jsonp 页面
+    public function doFund(){
+        $list = input('param.list');
+        $i = 0;
+        foreach ($list as $k=>$v) {
+            $i += 1;
+        }
+        return $i;
+    }
+    //  测试
+    public function tesst(){
+       $cb = Cache::get('cb');
+       $cc = Cache::get('sortType');
+       var_dump($cb);
+        var_dump($cc);
+    }
     //  删除无效的信息
     public function deletOther(){
         set_time_limit(0);
@@ -665,9 +699,9 @@ class Fund extends Controller{
 
     //  得到今日可买基金列表
     public function getBuyFund(){
-        // http://www.daniel.com/api/fund/getBuyFund?w=2.9&bw=1&sw=9&sd=diff_weight
+        // http://www.daniel.com/api/fund/getBuyFund?w=3.3&aw=4&bw=1&sw=9&sd=diff_weight
         $base = new FundBase;
-        $where[] = array('diff_weight','>',-0.1);
+        $where[] = array('diff_weight','>',0.1);
         $where[] = array('diff_weight','<=',1);
         $where[] = array('buy_status','=',0);
         //$where[] = array('weight','>',2.5);
@@ -691,7 +725,7 @@ class Fund extends Controller{
             $where[] = array('weight','>',input('param.w'));
         }
         if(input('param.aw')){
-            $where[] = array('amend_weight','>',input('param.aw'));
+            $where[] = array('amend_weight','<',input('param.aw'));
         }
         if(input('param.sw')){
             $where[] = array('sell_weight','<',input('param.sw'));
@@ -704,9 +738,9 @@ class Fund extends Controller{
         }
         $temp_diff = $base::field('code')->where($where)->limit(20)->order('diff_weight desc')
             ->select()->toArray();
-        $temp_ab = $base::field('code,(buy_weight-grow_weight) as a_buy_weight')->where($where)->limit(20)->order('a_buy_weight desc')
+        $temp_ab = $base::field('code')->where($where)->limit(20)->order('buy_weight desc')
             ->select()->toArray();
-        $temp_aw = $base::field('code')->where($where)->limit(20)->order('amend_weight desc')
+        $temp_aw = $base::field('code')->where($where)->limit(20)->order('amend_weight asc')
             ->select()->toArray();
         $str_diff = '';$str_ab = '';$str_aw = '';
         foreach ($temp_diff as $kk=>$vv){
@@ -726,16 +760,16 @@ class Fund extends Controller{
         $aw_arr = explode('  ',$str_aw);
         $arr = array_intersect($diff_arr,$ab_arr,$aw_arr);
         //var_dump($arr);
-        $all_data = $base::field('*,(buy_weight-grow_weight) as a_buy_weight')->where($where)->order($sort)
+        $all_data = $base::field('*')->where($where)->order($sort)
             ->select()->toArray();
         echo '总数据:'.count($all_data);
         echo '</br>';
         echo '</br>';
-        echo 'desc与a_buy_weight与amend_weight desc 交集:'.implode($arr, ' ');
+        echo $sort_code.' '.$sort_type.'与buy_weight desc和amend_weight asc 交集:'.implode($arr, ' ');
         echo '</br>';
         echo '</br>';
         foreach ($all_data as $k=>$v){
-            echo '编码:'.$v['code'].'  权重:'.$v['weight'].'  修正差值:'.$v['diff_weight'].'  买权重:'.$v['buy_weight'].'  修正买权重:'.round($v['a_buy_weight'],2).'  卖权重:'.$v['sell_weight'].'  费率%:'.($v['fee']/10000).'  今日预增长: '.$v['grow_weight'];
+            echo '编码: '.$v['code'].'  权重: '.$v['weight'].'  修正差值: '.$v['diff_weight'].'  修正买权重: '.$v['buy_weight'].'  卖权重: '.$v['sell_weight'].'  费率%: '.($v['fee']/10000).'  今日预增长%: '.$v['grow_weight'].' '.$v['name'];
             echo '</br>';
             echo '</br>';
         }
@@ -747,7 +781,7 @@ class Fund extends Controller{
         $data = Db::table('sp_my_fund')
             ->alias('m')
             ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
-            ->field('m.*,b.name,b.fee,b.day_grow,b.grow_status,b.grow,b.unit_value,b.amend_weight,b.sell_weight,b.grow_weight')
+            ->field('m.*,b.name,b.fee,b.day_grow,b.grow_status,b.grow,b.unit_value,b.weight,b.amend_weight,b.sell_weight,b.grow_weight')
             ->where('m.my_fund_status','=',1)
             ->order('sell_weight desc')
             ->select();
@@ -757,7 +791,11 @@ class Fund extends Controller{
         foreach ($data as $k=>$v){
             $t = ($v['unit_value']-$v['buy_fund_value'])/$v['buy_fund_value'];
             $yields = round($t,4)*100;
-            echo '编码:'.$v['my_fund_code'].'  购买日期:'.$v['buy_date'].'  卖权重:'.$v['sell_weight'].'  修正卖权重:'.round(($v['sell_weight']+$v['grow_weight']),2).'  费率%:'.($v['fee']/10000).'  持有天数: '.$v['day_nums'].'  今日预增长%: '.$v['grow_weight'].'  今日预收益%: '.$yields;
+            $date = date("Y-m-d");
+            if($date == $v['buy_date']){
+                $yields = 0;
+            }
+            echo '编码: '.$v['my_fund_code'].'   购买日期: '.$v['buy_date'].'   权重: '.$v['weight'].'   修正卖权重: '.round(($v['sell_weight']+$v['grow_weight']),2).'    费率%: '.($v['fee']/10000).'    持有天数: '.$v['day_nums'].'   今日预增长%: '.$v['grow_weight'].'    今日预收益%: '.$yields;
             echo '</br>';
             echo '</br>';
         }
