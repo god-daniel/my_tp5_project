@@ -616,20 +616,14 @@ class Fund extends Controller{
         }
         $base->saveAll($all_data);
     }
-    //  jsonp 页面
-    public function cronFund(){
-        set_time_limit(0);
-        $host = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/showFund';
-        $str = HttpGet($host);
-        //$bb = file_get_contents($host);
-        var_dump($str);
-        $cb = Cache::get('cb');
-        var_dump($host);
-    }
+
     //  jsonp 页面
     public function showFund(){
+        $pq_bool = $this->is_open_date();
+        $pq_bool = 1;
         $pq_url = 'http://api.fund.eastmoney.com/FundGuZhi/GetFundGZList?type=1&sort=1&orderType=asc&canbuy=1&pageIndex=1&pageSize=20000'; // 请求地址 爬取数据
         $do_url = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/doFund'; // 请求地址 处理数据
+        $this->assign('pq_bool', $pq_bool);
         $this->assign('pq_url', $pq_url);
         $this->assign('do_url', $do_url);
         return $this->fetch();
@@ -644,90 +638,60 @@ class Fund extends Controller{
             $where[] = array('buy_status','in','0,2');
             $all_data = $base::where($where)->order('code asc')
                 ->select()->toArray();
-            $arr = [];
             foreach ($all_data as $k=>$v){
-                $arr[$k]['create_time'] = 1551577703;  //创建时间
-                $arr[$k]['update_time'] = time();  //更新时间
-                $arr[$k]['id'] = $v['id'];
-                $arr[$k]['code'] = $v['code'];
-                $arr[$k]['buy_status'] = 1;
-                $arr[$k]['amend_weight'] = 0;
-                $arr[$k]['grow_weight']= 0;
-                $arr[$k]['type_desc'] = '';
-                //$arr[$k]['fee'] = 10000;
-                $arr[$k]['update_date'] = date("Y-m-d");
-                $arr[$k]['unit_value'] = 10000;
-                $arr[$k]['grow'] = 0;
-                $arr[$k]['amend_weight']=0;
-                $arr[$k]['grow_weight']=0;
-                $arr[$k]['diff_weight'] = 0;
-                $arr[$k]['sell_weight']=0;
-                $arr[$k]['buy_weight']=0;
-                $arr[$k]['sell_diff_buy_weight'] = 0;
+                $all_data[$k]['create_time'] = 1551577703;  //创建时间
+                $all_data[$k]['update_time'] = time();  //更新时间
+                $all_data[$k]['buy_status'] = 1;
                 foreach ($list as $kk=>$vv) {
                     if($v['code']==$vv['bzdm']){
-                        $arr[$k]['buy_status'] = 0;
-                        $arr[$k]['type_desc'] = $vv['FType'];
-                        //$arr[$k]['fee'] = $vv['Rate']*10000;
-                        if($vv['gszzl']=='---'||$vv['jzzzl']=='---'){
-                            $arr[$k]['buy_status'] = 2;
+                        $all_data[$k]['buy_status'] = 0;
+                        $all_data[$k]['type_desc'] = $vv['FType'];
+                        $all_data[$k]['fee'] = $vv['Rate']*10000;
+                        if($vv['gszzl']=='---'){
+                            $all_data[$k]['buy_status'] = 2;
                             unset($list[$kk]);
                             break;
                         }
-                        $arr[$k]['update_date'] = $vv['gxrq'];
-                        $arr[$k]['unit_value'] = $vv['gsz']*10000;
-                        $arr[$k]['grow'] = $vv['gszzl']*10000;
+                        $all_data[$k]['update_date'] = $vv['gxrq'];
+                        $all_data[$k]['unit_value'] = $vv['gsz']*10000;
+                        $all_data[$k]['grow'] = $vv['gszzl']*10000;
 
                         $temp['day_grow']=$v['day_grow'];
-                        $temp['week_grow']=$arr[$k]['grow']+$v['week_grow'];
-                        $temp['month_grow']=$arr[$k]['grow']+$v['month_grow'];
-                        $temp['month_three_grow']=$arr[$k]['grow']+$v['month_three_grow'];
+                        $temp['week_grow']=$all_data[$k]['grow']+$v['week_grow'];
+                        $temp['month_grow']=$all_data[$k]['grow']+$v['month_grow'];
+                        $temp['month_three_grow']=$all_data[$k]['grow']+$v['month_three_grow'];
                         $amend_weight = $this->get_weight($temp);
-                        $arr[$k]['amend_weight']+=$amend_weight['weight'];
-                        $arr[$k]['grow_weight']=$vv['gszzl']*1;
-                        $arr[$k]['diff_weight'] = $v['weight']-$arr[$k]['amend_weight'];
-                        if($vv['jzzzl']*1>0){
-                            $arr[$k]['sell_weight']=$arr[$k]['amend_weight']+$vv['jzzzl']*1;
+                        $all_data[$k]['amend_weight']+=$amend_weight['weight'];
+                        $all_data[$k]['grow_weight']=$vv['gszzl']*1;
+                        $all_data[$k]['diff_weight'] = $v['weight']-$all_data[$k]['amend_weight'];
+                        if($v['day_grow']>0){
+                            $all_data[$k]['sell_weight']=$all_data[$k]['amend_weight']+$v['day_grow']/10000;
                         }else{
-                            $arr[$k]['buy_weight']=$arr[$k]['amend_weight']-$vv['jzzzl']*1;
+                            $all_data[$k]['buy_weight']=$all_data[$k]['amend_weight']-$v['day_grow']/10000;
                         }
-                        $arr[$k]['sell_weight']+=$vv['gszzl']*1;
-                        $arr[$k]['buy_weight']+=$vv['gszzl']*1;
-                        $arr[$k]['sell_diff_buy_weight'] = $arr[$k]['sell_weight']-$arr[$k]['buy_weight'];
+                        $all_data[$k]['sell_weight']+=$vv['gszzl']*1;
+                        $all_data[$k]['buy_weight']-=$vv['gszzl']*1;
+                        $all_data[$k]['sell_diff_buy_weight'] = $all_data[$k]['sell_weight']-$all_data[$k]['buy_weight'];
                         unset($list[$kk]);
                         break;
                     }
                 }
             }
-            //return 2;
-            //Cache::set('data',json_encode($arr),3600);
-            $save = $base->saveAll($arr);
+            Cache::set('base_data',json_encode($all_data),7200);
         }
         return 1;
     }
-    //  测试
-    public function tesst(){
+    //  缓存抓取实时数据，保存到数据库
+    public function saveFundBase(){
         set_time_limit(0);
         $base = new FundBase;
-        $str = Cache::get('data');
+        $str = Cache::get('base_data');
         $arr = json_decode($str,true);
-        //$all_data = $base::where($where)->order('code asc')->select()->toArray();
-        var_dump($arr);
-        $bool = $base->saveAll($arr);
-        var_dump($bool);
-        $arr = array('1','2','3','4','5','6');
-        $arr2 = array('1','3','4','5','6');
-        $i = 0;
-        foreach ($arr as $k=>$v) {
-            foreach ($arr2 as $kk=>$vv) {
-                $i += 1;
-                if($vv==$v){
-                    unset($arr2[$kk]);
-                    break;
-                }
-            }
+        $chunk_result = array_chunk($arr, 500, true);
+        foreach ($chunk_result as $k=>$v) {
+            $base->saveAll($v);
         }
-        var_dump($i);
+        echo 1;
     }
     //  删除无效的信息
     public function deletOther(){
@@ -775,7 +739,61 @@ class Fund extends Controller{
             ->select();
         var_dump($data);
     }
+    //
+    public function getTesst(){
+        set_time_limit(0);
+        $str = Cache::get('base_data');
+        $arr_all = json_decode($str,true);
+        $where[] = array('diff_weight','>',0.1);
+        $where[] = array('diff_weight','<=',6);
+        $where[] = array('buy_status','=',0);
+        $where[] = array('weight','>',3);
+        $sort_code = 'weight';
+        $sort_type = SORT_DESC;
+        if(input('param.sd')){
+            $sort_code = input('param.sd');
+        }
+        if(input('param.st')==0){
+            $sort_type = SORT_ASC;
+        }
+        if(input('param.code')){
+            $where[] = array('code','=',input('param.code'));
+        }
+        if(input('param.w')){
+            $where[] = array('weight','>',input('param.w'));
+        }
+        if(input('param.aw')){
+            $where[] = array('amend_weight','<',input('param.aw'));
+        }
+        if(input('param.sbw')){
+            $where[] = array('sell_diff_buy_weight','<',input('param.sbw'));
+        }
+        if(input('param.fee')){
+            $where[] = array('fee','<=',input('param.fee')*10000);
+        }
 
+        $i = 0;
+        $arr = [];
+        foreach ($arr_all as $k=>$v){
+            $j = $this->my_where($where,$v);
+            if($j){
+                $i+=1;
+                $arr[$i] = $v;
+            }
+        }
+        $base = $this->my_sort($arr,$sort_code,$sort_type,SORT_NUMERIC);
+        echo '总数据:'.count($base);
+        echo '</br>';
+        echo '</br>';
+        //echo 1.' '.1.'与buy_weight desc和amend_weight asc 交集:'.implode($arr, ' ');
+        echo '</br>';
+        echo '</br>';
+        foreach ($base as $k=>$v){
+            echo '编码: '.$v['code'].'  权重: '.$v['weight'].'  修正差值: '.$v['diff_weight'].'  修正买权重: '.$v['buy_weight'].'  卖权重: '.$v['sell_weight'].'  费率%: '.($v['fee']/10000).'  今日预增长%: '.$v['grow_weight'].' '.$v['name'];
+            echo '</br>';
+            echo '</br>';
+        }
+    }
     //  得到今日可买基金列表
     public function getBuyFund(){
         // http://www.daniel.com/api/fund/getBuyFund?w=3.3&aw=4&bw=1&sw=9&sd=diff_weight
@@ -785,6 +803,7 @@ class Fund extends Controller{
         $where[] = array('buy_status','=',0);
         //$where[] = array('weight','>',2.5);
         //$where[] = array('sell_diff_buy_weight','<',2.5);
+        $where[] = array('amend_weight','>',3);
         $sort_code = 'weight';
         $sort_type = 'desc';
         if(input('param.sd')){
@@ -889,7 +908,7 @@ class Fund extends Controller{
         if(0<$data['week_grow']&&(2*$data['week_grow'])<$data['month_grow']){
             $weight['grow_status'] = 2;  //上升趋势
         }
-        $weight['weight'] = (floor($data['week_grow']/700)+floor($data['month_grow']/3000)+floor($data['month_three_grow']/9000))/100+($weight['grow_status']-1)*2;
+        $weight['weight'] = (floor($data['week_grow']/700)+floor($data['month_grow']/3000)+floor($data['month_three_grow']/9000))/100;
 
         $weight['sell_weight'] = $weight['weight'];
         $weight['buy_weight'] = $weight['weight'];
@@ -898,7 +917,6 @@ class Fund extends Controller{
         }else{
             $weight['buy_weight'] = $weight['weight']-floor($data['day_grow']/100)/100;
         }
-
         return $weight;
     }
 	//  是否交易日
@@ -912,5 +930,100 @@ class Fund extends Controller{
         $res = json_decode($res,true);
 		// 正常工作日对应结果为 0, 法定节假日对应结果为 1, 节假日调休补班对应的结果为 2，休息日对应结果为 3 
 		return $res['data'];
-    }		
+    }
+    //  是否交易时间
+    public function is_open_date(){
+        $times = time();
+        $beginTimes1=mktime(9,30,0,date('m'),date('d'),date('Y'));
+        $beginTimes2=mktime(13,0,0,date('m'),date('d'),date('Y'));
+        $endTimes1=mktime(11,40,0,date('m'),date('d'),date('Y'));
+        $endTimes2=mktime(15,11,0,date('m'),date('d'),date('Y'));
+        if($times<$endTimes1){
+            if($times>$beginTimes1){
+                return 1;    // 是交易时间
+            }
+        }
+        if($times>$beginTimes2){
+            if($times<$endTimes2){
+                return 1;
+            }
+        }
+        return 0;
+    }
+    /**
+     * 二维数组根据某个字段按指定排序方式排序
+     * @param $arr array 二维数组
+     * @param $field string 指定字段
+     * @param int $sort_order string SORT_ASC 按照上升顺序排序， SORT_DESC 按照下降顺序排序(具体请参考array_multisort官方定义)
+     * @param int $sort_flags string 排序类型标志(具体请参考array_multisort官方定义)
+     * @return mixed
+     *
+     * demo
+     * // 定义数组
+     * $arr = [['name'=>'bbb'], ['name'=>'aaa'], ['name'=>'Ccc']];
+     * // 需要按照name字段字符串升序排序
+     * $arr = arraySort($arr, 'name', SORT_ASC, SORT_STRING);
+     * // 需要按照name字段字符串升序排序,但忽略大小写
+     * $arr = arraySort($arr, 'name', SORT_ASC, SORT_FLAG_CASE | SORT_STRING);
+     */
+    public function my_sort($arr, $field, $sort_order = SORT_ASC, $sort_type = SORT_NUMERIC)
+    {
+        // 异常判断
+        if (!$arr || !is_array($arr) || !$field) {
+            return $arr;
+        }
+
+        // 将指定字段的值存进数组
+        $tmp = [];
+        foreach ($arr as $k => $v) {
+            $tmp[$k] = $v[$field];
+        }
+        if (!$tmp) {
+            return $arr;
+        }
+
+        // 调用php内置array_multisort函数
+        array_multisort($tmp, $sort_order, $sort_type, $arr);
+        return $arr;
+    }
+    // where条件判断组
+    public function my_where($where, $data)
+    {
+        $j = 1;
+        foreach ($where as $kk=>$vv) {
+            $bo = 0;
+            switch ($vv[1])
+            {
+                case '=':
+                    if($data[$vv[0]]==$vv[2]){
+                        $bo = 1;
+                    }
+                    break;
+                case '<':
+                    if($data[$vv[0]]<$vv[2]){
+                        $bo = 1;
+                    }
+                    break;
+                case '<=':
+                    if($data[$vv[0]]<=$vv[2]){
+                        $bo = 1;
+                    }
+                    break;
+                case '>':
+                    if($data[$vv[0]]>$vv[2]){
+                        $bo = 1;
+                    }
+                    break;
+                case '>=':
+                    if($data[$vv[0]]>=$vv[2]){
+                        $bo = 1;
+                    }
+                    break;
+                default:
+                    $bo = 0;
+            }
+            $j = $j*$bo;
+        }
+        return $j;
+    }
 }

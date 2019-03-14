@@ -29,14 +29,19 @@
 </head>
 <body>
 <div id="main">
-    <h1 align="center">111</h1>
+    <h1 align="center">{$pq_bool}</h1>
     <input type="hidden" name="pq_url" value="{$pq_url}" />
     <input type="hidden" name="do_url" value="{$do_url}" />
+    <input type="hidden" name="pq_bool" value="{$pq_bool}" />
 </div>
 <script type="text/javascript">
 $(document).ready(function (){
     var pq_url = $("input[name='pq_url']").val()
     var do_url = $("input[name='do_url']").val()
+    var pq_bool = $("input[name='pq_bool']").val()
+    if(pq_bool==0){
+        return false;
+    }
     $.ajax({
         type: 'GET',  //这里用GET
         headers: {
@@ -49,15 +54,6 @@ $(document).ready(function (){
         success : function(json){
             if(json.ErrCode == 0){
                 var data = json.Data
-/*                var fso;
-                try {
-                    fso=new ActiveXObject("Scripting.FileSystemObject");
-                } catch (e) {
-                    alert("当前浏览器不支持");
-                    return;
-                }
-                var f=fso.createtextfile("todayFund.txt",2,true);
-                f.write('111');*/
                 $.ajax({
                     type: 'POST',  //这里用GET
                     headers: {
