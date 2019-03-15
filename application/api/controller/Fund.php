@@ -741,6 +741,7 @@ class Fund extends Controller{
     }
     //  得到当前的
     public function getNowFund(){
+        // http://www.daniel.com/api/fund/getNowFund?w=3.3&aw=4&bw=1&sw=9&sd=diff_weight
         set_time_limit(0);
         $str = Cache::get('base_data');
         if(!$str){
