@@ -631,6 +631,7 @@ class Fund extends Controller{
     //  jsonp 页面
     public function doFund(){
         $list = input('param.list');
+        Cache::set('doFund',date("Y-m-d H:i:s"),3600);
         set_time_limit(0);
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
         if($is_gzr==0){
@@ -728,7 +729,7 @@ class Fund extends Controller{
             Cache::set($v['code'],json_encode($v),3600);
         }
         var_dump($data);
-        $cahe = Cache::get('001553');
+        $cahe = Cache::get('doFund');
         var_dump($cahe);
     }
     //  我的基金列表
