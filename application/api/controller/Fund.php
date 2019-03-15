@@ -713,6 +713,7 @@ class Fund extends Controller{
     //  设置缓存
     public function setCache(){
         $date = date("Y-m-d");
+        Cache::set('001553','12345',3600);
         if(input('param.date')){
             $date = input('param.date');
         }
