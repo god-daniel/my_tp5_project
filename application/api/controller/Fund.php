@@ -616,6 +616,21 @@ class Fund extends Controller{
         }
         $base->saveAll($all_data);
     }
+    //  jsonp 页面
+    public function tt(){
+
+        $pq_url = 'http://api.fund.eastmoney.com/FundGuZhi/GetFundGZList?type=1&sort=1&orderType=asc&canbuy=1&pageIndex=1&pageSize=20000'; // 请求地址 爬取数据
+        $refer = 'http://localhost';
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $pq_url);
+        //伪造来源refer
+        curl_setopt($ch, CURLOPT_REFERER, $refer);
+        //...各种curl属性参数设置
+        $out_put = curl_exec($ch);
+        curl_close($ch);
+        $arr = json_decode($out_put,true);
+        var_dump($arr['list']);
+    }
 
     //  jsonp 页面
     public function showFund(){
