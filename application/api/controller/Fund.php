@@ -620,7 +620,7 @@ class Fund extends Controller{
     //  jsonp 页面
     public function showFund(){
         $pq_bool = $this->is_open_date();
-        $pq_bool = 1;
+        //$pq_bool = 1;
         $pq_url = 'http://api.fund.eastmoney.com/FundGuZhi/GetFundGZList?type=1&sort=1&orderType=asc&canbuy=1&pageIndex=1&pageSize=20000'; // 请求地址 爬取数据
         $do_url = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/doFund'; // 请求地址 处理数据
         $this->assign('pq_bool', $pq_bool);
@@ -739,15 +739,17 @@ class Fund extends Controller{
             ->select();
         var_dump($data);
     }
-    //
-    public function getTesst(){
+    //  得到当前的
+    public function getNowFund(){
         set_time_limit(0);
         $str = Cache::get('base_data');
+        if(!$str){
+            echo '没有缓存';
+            return 1;
+        }
         $arr_all = json_decode($str,true);
-        $where[] = array('diff_weight','>',0.1);
-        $where[] = array('diff_weight','<=',6);
         $where[] = array('buy_status','=',0);
-        $where[] = array('weight','>',3);
+
         $sort_code = 'weight';
         $sort_type = SORT_DESC;
         if(input('param.sd')){
@@ -759,8 +761,15 @@ class Fund extends Controller{
         if(input('param.code')){
             $where[] = array('code','=',input('param.code'));
         }
+        if(input('param.dw')){
+            $where[] = array('diff_weight','>',input('param.dw'));
+        }else{
+            $where[] = array('diff_weight','>',0);
+        }
         if(input('param.w')){
             $where[] = array('weight','>',input('param.w'));
+        }else{
+            $where[] = array('weight','>',0.5);
         }
         if(input('param.aw')){
             $where[] = array('amend_weight','<',input('param.aw'));
