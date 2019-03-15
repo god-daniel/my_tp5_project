@@ -576,49 +576,12 @@ class Fund extends Controller{
     }
     //  测试
     public function test(){
-        var_dump(111);die;
-        set_time_limit(0);
-        $base = new FundBase;
-        if(input('param.code')){
-            $where[] = array('code','=',input('param.code'));
-        }
-        $where[] = array('buy_status','=',0);
-        $all_data = $base::where($where)->order('code asc')
-            ->select()->toArray();
-        foreach ($all_data as $k=>$v){
-            $cahe = Cache::get($v['code']);
-            $all_data[$k]['create_time'] = 1551577703;  //创建时间
-            $all_data[$k]['update_time'] = time();  //更新时间
-            $all_data[$k]['weight'] = 0;
-            $all_data[$k]['buy_weight'] = 0;
-            $all_data[$k]['sell_weight'] = 0;
-            $all_data[$k]['amend_weight'] = 0;
-            $all_data[$k]['grow_status'] = 1;
-            if($cahe||1){
-                //$temp = json_decode($cahe,true);
-                $weight = $this->get_weight($v);
-
-                $now_grow = $v['day_grow'];
-                //$now_grow = 0;
-                //if($all_data[$k]['num_2_value']>0){
-                 //   $now_grow = floor(($all_data[$k]['num_1_value']-$all_data[$k]['num_2_value'])/$all_data[$k]['num_2_value']*10000);
-                //}
-                //$temp['week_grow']+=$now_grow;
-                //$temp['month_grow']+=$now_grow;
-                //$temp['month_three_grow']+=$now_grow;
-                //$amend_weight = $this->get_weight($temp);
-                $all_data[$k]['weight']=$weight['weight'];
-                $all_data[$k]['buy_weight']+=$weight['buy_weight'];
-                $all_data[$k]['sell_weight']+=$weight['sell_weight'];
-                $all_data[$k]['grow_status']=$weight['grow_status'];
-                //$all_data[$k]['amend_weight']+=$amend_weight['weight'];
-            }
-        }
-        $base->saveAll($all_data);
+        $str = Cache::get('base_data');
+        var_dump($str);
     }
-    //  jsonp 页面
-    public function tt(){
-
+    //  setNowFundCahe
+    public function setNowFundCahe(){
+        set_time_limit(0);
         $pq_url = 'http://api.fund.eastmoney.com/FundGuZhi/GetFundGZList?type=1&sort=1&orderType=asc&canbuy=1&pageIndex=1&pageSize=20000'; // 请求地址 爬取数据
         $refer = 'http://localhost';
         $ch = curl_init();
@@ -626,30 +589,18 @@ class Fund extends Controller{
         //伪造来源refer
         curl_setopt($ch, CURLOPT_REFERER, $refer);
         //...各种curl属性参数设置
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)");
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 0);
+
         $out_put = curl_exec($ch);
         curl_close($ch);
-        $arr = json_decode($out_put,true);
-        var_dump($arr['list']);
-    }
-
-    //  jsonp 页面
-    public function showFund(){
-        $pq_bool = $this->is_open_date();
-        //$pq_bool = 1;
-        $pq_url = 'http://api.fund.eastmoney.com/FundGuZhi/GetFundGZList?type=1&sort=1&orderType=asc&canbuy=1&pageIndex=1&pageSize=20000'; // 请求地址 爬取数据
-        $do_url = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/doFund'; // 请求地址 处理数据
-        $this->assign('pq_bool', $pq_bool);
-        $this->assign('pq_url', $pq_url);
-        $this->assign('do_url', $do_url);
-        return $this->fetch();
-    }
-    //  jsonp 页面
-    public function doFund(){
-        $list = input('param.list');
-        Cache::set('doFund',date("Y-m-d H:i:s"),3600);
-        set_time_limit(0);
+        $arr_temp = json_decode($out_put,true);
+        $list = $arr_temp['Data']['list'];
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
-        if($is_gzr==0){
+
+        $pq_bool = $this->is_open_date();
+        if($is_gzr==0&&$pq_bool==1){
             $base = new FundBase;
             $where[] = array('buy_status','in','0,2');
             $all_data = $base::where($where)->order('code asc')
