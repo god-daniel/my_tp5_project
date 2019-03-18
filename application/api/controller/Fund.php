@@ -98,7 +98,7 @@ class Fund extends Controller{
             if(input('param.code')){
                 $where[] = array('code','=',input('param.code'));
             }
-            $where[] = array('1','=',1);
+            $where[] = array('buy_status','in','0,1,2');
             $data = $base::where($where)->order('code asc')->select()->toArray();
             foreach ($data as $k=>$v){
                 $cahe = Cache::get($v['code']);
@@ -146,7 +146,7 @@ class Fund extends Controller{
             $page_ed = $page_num*$page;
             $where[] = array('id','>=',$page_sd);
             $where[] = array('id','<=',$page_ed);
-            $where[] = array('buy_status','=',0);
+            $where[] = array('buy_status','in','0,2');
             $base = new FundBase;
             $data = $base::where($where)->order('code asc')->select()->toArray();
             $day_base = new FundDayList();
@@ -161,7 +161,6 @@ class Fund extends Controller{
                 $data[$k]['weight']=$weight['weight'];
                 $data[$k]['buy_weight']=$weight['buy_weight'];
                 $data[$k]['sell_weight']=$weight['sell_weight'];
-                $data[$k]['grow_status']=$weight['grow_status'];
                 $data[$k]['sell_diff_buy_weight'] = $data[$k]['sell_weight']-$data[$k]['buy_weight'];
                 foreach ($day_data as $kk=>$vv){
                     $data[$k]['num_'.($kk+1).'_value'] = $vv['unit_value'];
@@ -551,6 +550,32 @@ class Fund extends Controller{
         }
         $day_list->saveAll($arr);
     }
+    //  更新基础基金的日增长，周增长，权重, 上一个5日平均  上上个5日平均
+    public function dealFundBase(){
+        set_time_limit(0);
+        // http://www.daniel.com/api/fund/todayMyFund
+        $base = new FundBase;
+        $data = Db::table('sp_fund_base')
+            ->alias('b')
+            ->leftJoin('sp_fund_base_list l','b.code = l.code')
+            ->field('b.id,b.weight,((num_1_value+num_2_value+num_3_value+num_4_value+num_5_value)/5) as avg_value1,((num_6_value+num_7_value+num_8_value+num_9_value+num_10_value)/5) as avg_value2,l.day_grow,l.week_grow,l.month_grow,l.month_three_grow,l.month_six_grow,l.year_grow,l.year_one_grow,l.year_two_grow,l.year_three_grow')
+            ->where('b.buy_status','=',0)
+            ->select();
+        foreach ($data as $k => $v){
+
+            $data[$k]['create_time'] = 1551577703;  //创建时间
+            $data[$k]['update_time'] = time();  //更新时间
+            $weight = $this->get_weight($v);
+            $data[$k]['avg_value1']=intval($data[$k]['avg_value1']);
+            $data[$k]['avg_value2']=intval($data[$k]['avg_value2']);
+            $data[$k]['weight']=$weight['weight'];
+            $data[$k]['buy_weight']=$weight['buy_weight'];
+            $data[$k]['sell_weight']=$weight['sell_weight'];
+            $data[$k]['sell_diff_buy_weight'] = $data[$k]['sell_weight']-$data[$k]['buy_weight'];
+        }
+        $base->saveAll($data);
+    }
+
     //  更新我持有的基金数据  持有天数，收益率
     public function todayMyFund(){
         // http://www.daniel.com/api/fund/todayMyFund
@@ -649,16 +674,23 @@ class Fund extends Controller{
         return 1;
     }
     //  缓存抓取实时数据，保存到数据库
+    //  之前的更新网址  */10 9-15 * * 1-5 curl -o /data/wwwlogs/crontabFundNow.log http://fund.mankkk.cn/api/fund/updateTodayFund?page=9
     public function saveFundBase(){
         set_time_limit(0);
-        $base = new FundBase;
-        $str = Cache::get('base_data');
-        $arr = json_decode($str,true);
-        $chunk_result = array_chunk($arr, 500, true);
-        foreach ($chunk_result as $k=>$v) {
-            $base->saveAll($v);
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+
+        $pq_bool = $this->is_open_date();
+        if($is_gzr==0&&$pq_bool==1){
+            $base = new FundBase;
+            $str = Cache::get('base_data');
+            $arr = json_decode($str,true);
+            $chunk_result = array_chunk($arr, 500, true);
+            foreach ($chunk_result as $k=>$v) {
+                $base->saveAll($v);
+            }
+            return 1;
         }
-        echo 1;
+        echo 0;
     }
     //  删除无效的信息
     public function deletOther(){
@@ -697,15 +729,6 @@ class Fund extends Controller{
         var_dump($data);
         $cahe = Cache::get('doFund');
         var_dump($cahe);
-    }
-    //  我的基金列表
-    public function myFund(){
-        $data = Db::table('sp_my_fund')
-            ->alias('m')
-            ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
-            ->field('m.*,b.name,b.fee,b.unit_value,b.grow,b.sell_1_fee,b.sell_2_fee,b.sell_1_day,b.sell_2_day,b.num_1_grow,b.num_2_grow,b.num_3_grow,b.num_4_grow,b.num_5_grow')
-            ->select();
-        var_dump($data);
     }
     //  得到当前的
     public function getNowFund(){
@@ -857,13 +880,12 @@ class Fund extends Controller{
         $data = Db::table('sp_my_fund')
             ->alias('m')
             ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
-            ->field('m.*,b.name,b.fee,b.day_grow,b.grow_status,b.grow,b.unit_value,b.weight,b.amend_weight,b.sell_weight,b.grow_weight')
+            ->field('m.*,b.name,b.fee,b.day_grow,b.grow_status,b.grow,b.unit_value,b.weight,b.amend_weight,b.sell_weight,b.grow_weight,b.avg_value1,b.avg_value2')
             ->where('m.my_fund_status','=',1)
-            ->order('sell_weight desc')
+            ->order('day_nums desc,grow_weight desc')
             ->select();
-        echo '总数据:'.count($data);
-        echo '</br>';
-        echo '</br>';
+
+        $all_money = 0;
         foreach ($data as $k=>$v){
             $t = ($v['unit_value']-$v['buy_fund_value'])/$v['buy_fund_value'];
             $yields = round($t,4)*100;
@@ -871,21 +893,64 @@ class Fund extends Controller{
             if($date == $v['buy_date']){
                 $yields = 0;
             }
-            echo '编码: '.$v['my_fund_code'].'   购买日期: '.$v['buy_date'].'   权重: '.$v['weight'].'   修正卖权重: '.round(($v['sell_weight']+$v['grow_weight']),2).'    费率%: '.($v['fee']/10000).'    持有天数: '.$v['day_nums'].'   今日预增长%: '.$v['grow_weight'].'    今日预收益%: '.$yields;
+            $st1 = 0;
+            $st2 = 0;
+            if($v['unit_value']>$v['avg_value1']){
+                $st1 = 1;
+            }
+            if($v['avg_value1']>$v['avg_value2']){
+                $st1 = 2;
+            }
+            $desc = $v['my_fund_status']==1?'持有': '卖出';
+            $money = $yields*$v['buy_fund_money']/100;
+            $all_money += $money;
+            echo '编码: '.$v['my_fund_code'].'   购买日期: '.$v['buy_date'].'   权重: '.$v['weight'].'   修正卖权重: '.round(($v['sell_weight']+$v['grow_weight']),2).'    费率%: '.($v['fee']/10000).'    持有天数: '.$v['day_nums'].'   今日预增长%: '.$v['grow_weight'].'    今日预收益%: '.$yields.' &nbsp;金额:'.$money.' &nbsp;st1-st2: &nbsp;'.$st1.'-'.$st2.' &nbsp;&nbsp;'.$desc.' &nbsp;&nbsp;&nbsp;&nbsp;'.$v['name'];
             echo '</br>';
             echo '</br>';
         }
+        echo '总数据:'.count($data).' 总收益:'.$all_money;
+        echo '</br>';
+        echo '</br>';
+    }
+    //  计算我的收益金额
+    public function countMyFund(){
+        $where[] = array('my_fund_status','=',2);
+        //$where[] = array('m.sell_date','=',0);
+        $data = Db::table('sp_my_fund')
+            ->alias('m')
+            ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
+            ->field('m.*,b.fee,b.num_1_value,b.sell_1_fee,b.sell_2_fee,b.sell_1_day,b.sell_2_day')
+            ->where($where)
+            ->order('day_nums desc,grow_weight desc')
+            ->select();
+
+        $arr = [];
+        foreach ($data as $k=>$v) {
+            $date = date("Y-m-d",(strtotime($v['buy_date'])+3600*24*$v['day_nums']));
+            $t = (($v['num_1_value'] - $v['buy_fund_value']) / $v['buy_fund_value'])*$v['buy_fund_money'];
+            $sell_money = round($t, 4) * 100;
+            $arr[$k]['my_id'] = $v['my_id'];
+            $arr[$k]['sell_date'] = $date;
+            $arr[$k]['sell_money'] = $sell_money;
+            $fee_money = 0;
+            $buy_fee = $v['fee']*$v['buy_fund_money']/10000;
+            if($v['day_nums']<$v['sell_1_day']){
+                $fee_money = $buy_fee+$v['sell_1_fee']*($sell_money-$buy_fee)/10000;
+            }
+            if($v['day_nums']>=$v['sell_1_day']&&$v['day_nums']<$v['sell_2_day']){
+                $fee_money = $buy_fee+$v['sell_2_fee']*($sell_money-$buy_fee)/10000;
+            }
+            $profit = $sell_money - $fee_money;
+            $arr[$k]['profit'] = round($profit,2);
+            $arr[$k]['fee_money'] = rount($fee_money,2);
+            $arr[$k]['my_fund_status'] = 3;
+        }
+        $base = new MyFund;
+        $base->saveAll($arr);
     }
     //  得到基准权重 $data 一维数组
     public function get_weight($data){
         $weight = array();
-        $weight['grow_status'] = 1;
-        if($data['week_grow']<0||$data['month_grow']<0||$data['month_three_grow']<0){
-            $weight['grow_status'] = 0;  //下降趋势
-        }
-        if(0<$data['week_grow']&&(2*$data['week_grow'])<$data['month_grow']){
-            $weight['grow_status'] = 2;  //上升趋势
-        }
         $weight['weight'] = (floor($data['week_grow']/700)+floor($data['month_grow']/3000)+floor($data['month_three_grow']/9000))/100;
 
         $weight['sell_weight'] = $weight['weight'];
