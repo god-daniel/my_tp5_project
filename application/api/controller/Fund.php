@@ -701,12 +701,14 @@ class Fund extends Controller{
             $out_put = $this->pq_http_get($pq_url);
             $arr_temp = json_decode($out_put,true);
             $list = $arr_temp['Data']['QuarterInfos'][0]['HYPZInfo'];
-            foreach ($list as $kk => $vv) {
-                $all_data[$k]['hy_'.($kk+1).'_value'] = $vv['ZJZBLDesc']*1;
-                $all_data[$k]['hy_'.($kk+1).'_type'] = $vv['HYDM'];
-                $all_data[$k]['hy_'.($kk+1).'_desc'] = $vv['HYMC'];
-                if ($kk == 2) {
-                    break;
+            if($list){
+                foreach ($list as $kk => $vv) {
+                    $all_data[$k]['hy_'.($kk+1).'_value'] = $vv['ZJZBLDesc']*1;
+                    $all_data[$k]['hy_'.($kk+1).'_type'] = $vv['HYDM'];
+                    $all_data[$k]['hy_'.($kk+1).'_desc'] = $vv['HYMC'];
+                    if ($kk == 2) {
+                        break;
+                    }
                 }
             }
         }
