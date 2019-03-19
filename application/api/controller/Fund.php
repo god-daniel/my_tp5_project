@@ -673,6 +673,45 @@ class Fund extends Controller{
         }
         return 1;
     }
+
+    // 设置基金行业
+    public function setFundHy(){
+        set_time_limit(0);
+
+        if(input('param.code')){
+            $where[] = array('code','=',input('param.code'));
+        }
+        $page_num = 20000;
+        $page = 1;
+        if(input('param.page')){
+            $page = input('param.page');
+            $page_num = 1000;
+        }
+        $page_sd = $page_num*($page-1)+1;
+        $page_ed = $page_num*$page;
+        $where[] = array('id','>=',$page_sd);
+        $where[] = array('id','<=',$page_ed);
+        $base = new FundBase;
+        $all_data = $base::where($where)->order('code asc')
+            ->select()->toArray();
+        foreach ($all_data as $k=>$v) {
+            $all_data[$k]['create_time'] = 1551577703;  //创建时间
+            $all_data[$k]['update_time'] = time();  //更新时间
+            $pq_url = 'http://api.fund.eastmoney.com/f10/HYPZ/?fundCode='.$v['code'].'&year='; // 请求地址 爬取数据
+            $out_put = $this->pq_http_get($pq_url);
+            $arr_temp = json_decode($out_put,true);
+            $list = $arr_temp['Data']['QuarterInfos'][0]['HYPZInfo'];
+            foreach ($list as $kk => $vv) {
+                $all_data[$k]['hy_'.($kk+1).'_value'] = $vv['ZJZBLDesc']*1;
+                $all_data[$k]['hy_'.($kk+1).'_type'] = $vv['HYDM'];
+                $all_data[$k]['hy_'.($kk+1).'_desc'] = $vv['HYMC'];
+                if ($kk == 2) {
+                    break;
+                }
+            }
+        }
+        $base->saveAll($all_data);
+    }
     //  缓存抓取实时数据，保存到数据库
     //  之前的更新网址  */10 9-15 * * 1-5 curl -o /data/wwwlogs/crontabFundNow.log http://fund.mankkk.cn/api/fund/updateTodayFund?page=9
     public function saveFundBase(){
@@ -899,7 +938,7 @@ class Fund extends Controller{
                 $st1 = 1;
             }
             if($v['avg_value1']>$v['avg_value2']){
-                $st1 = 2;
+                $st2 = 1;
             }
             $desc = $v['my_fund_status']==1?'持有': '卖出';
             $money = $yields*$v['buy_fund_money']/100;
@@ -919,7 +958,7 @@ class Fund extends Controller{
         $data = Db::table('sp_my_fund')
             ->alias('m')
             ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
-            ->field('m.*,b.fee,b.num_1_value,b.sell_1_fee,b.sell_2_fee,b.sell_1_day,b.sell_2_day')
+            ->field('m.*,b.fee,b.num_2_value,b.num_1_value,b.sell_1_fee,b.sell_2_fee,b.sell_1_day,b.sell_2_day')
             ->where($where)
             ->order('day_nums desc,grow_weight desc')
             ->select();
@@ -927,8 +966,8 @@ class Fund extends Controller{
         $arr = [];
         foreach ($data as $k=>$v) {
             $date = date("Y-m-d",(strtotime($v['buy_date'])+3600*24*$v['day_nums']));
-            $t = (($v['num_1_value'] - $v['buy_fund_value']) / $v['buy_fund_value'])*$v['buy_fund_money'];
-            $sell_money = round($t, 4) * 100;
+            $t = (($v['num_1_value'] - $v['buy_fund_value']) / $v['buy_fund_value'])*$v['buy_fund_money']+$v['buy_fund_money'];
+            $sell_money = round($t, 2);
             $arr[$k]['my_id'] = $v['my_id'];
             $arr[$k]['sell_date'] = $date;
             $arr[$k]['sell_money'] = $sell_money;
@@ -937,12 +976,12 @@ class Fund extends Controller{
             if($v['day_nums']<$v['sell_1_day']){
                 $fee_money = $buy_fee+$v['sell_1_fee']*($sell_money-$buy_fee)/10000;
             }
-            if($v['day_nums']>=$v['sell_1_day']&&$v['day_nums']<$v['sell_2_day']){
+            if($v['day_nums']>=$v['sell_1_day']){
                 $fee_money = $buy_fee+$v['sell_2_fee']*($sell_money-$buy_fee)/10000;
             }
             $profit = $sell_money - $fee_money;
             $arr[$k]['profit'] = round($profit,2);
-            $arr[$k]['fee_money'] = rount($fee_money,2);
+            $arr[$k]['fee_money'] = round($fee_money,2);
             $arr[$k]['my_fund_status'] = 3;
         }
         $base = new MyFund;
@@ -992,6 +1031,22 @@ class Fund extends Controller{
             }
         }
         return 0;
+    }
+    //  重定向get请求
+    public function pq_http_get($url=''){
+        $refer = 'http://localhost';
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        //伪造来源refer
+        curl_setopt($ch, CURLOPT_REFERER, $refer);
+        //...各种curl属性参数设置
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)");
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 0);
+
+        $out_put = curl_exec($ch);
+        curl_close($ch);
+        return $out_put;
     }
     /**
      * 二维数组根据某个字段按指定排序方式排序
