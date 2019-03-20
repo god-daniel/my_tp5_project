@@ -712,6 +712,7 @@ class Fund extends Controller{
                 }
             }
         }
+        var_dump($all_data);
         $base->saveAll($all_data);
     }
     //  缓存抓取实时数据，保存到数据库
@@ -838,14 +839,15 @@ class Fund extends Controller{
     }
     //  得到今日可买基金列表
     public function getBuyFund(){
-        // http://www.daniel.com/api/fund/getBuyFund?w=3.3&aw=4&bw=1&sw=9&sd=diff_weight
+        // http://www.daniel.com/api/fund/getBuyFund?w=0.5&fee=0.15&sd=buy_weight
         $base = new FundBase;
-        $where[] = array('diff_weight','>',0.1);
-        $where[] = array('diff_weight','<=',1);
+        $where[] = array('diff_weight','>',-0.1);
+        //$where[] = array('diff_weight','<=',1.3);
         $where[] = array('buy_status','=',0);
-        //$where[] = array('weight','>',2.5);
+        //$where[] = array('weight','<',2.5);
         //$where[] = array('sell_diff_buy_weight','<',2.5);
-        $where[] = array('amend_weight','>',3);
+        $where[] = array('month_grow','>=',130000);
+        $where[] = array('hy_1_desc','<>','行业说明');
         $sort_code = 'weight';
         $sort_type = 'desc';
         if(input('param.sd')){
@@ -909,7 +911,11 @@ class Fund extends Controller{
         echo '</br>';
         echo '</br>';
         foreach ($all_data as $k=>$v){
-            echo '编码: '.$v['code'].'  权重: '.$v['weight'].'  修正差值: '.$v['diff_weight'].'  修正买权重: '.$v['buy_weight'].'  卖权重: '.$v['sell_weight'].'  费率%: '.($v['fee']/10000).'  今日预增长%: '.$v['grow_weight'].' '.$v['name'];
+            $avg = '大于5日均值';
+            if ($v['unit_value']<=$v['avg_value1']) {
+                $avg = '小于5日均值';
+            }
+            echo '编码: '.$v['code'].'  权重: '.$v['weight'].'  修正差值: '.$v['diff_weight'].'  修正买权重: '.$v['buy_weight'].'  卖权重: '.$v['sell_weight'].'  费率%: '.($v['fee']/10000).'  今日预增长%: '.$v['grow_weight'].' &nbsp;&nbsp;'.$avg.' &nbsp;&nbsp;'.$v['hy_1_desc'].' &nbsp;&nbsp;'.$v['name'];
             echo '</br>';
             echo '</br>';
         }
@@ -921,7 +927,7 @@ class Fund extends Controller{
         $data = Db::table('sp_my_fund')
             ->alias('m')
             ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
-            ->field('m.*,b.name,b.fee,b.day_grow,b.grow_status,b.grow,b.unit_value,b.weight,b.amend_weight,b.sell_weight,b.grow_weight,b.avg_value1,b.avg_value2')
+            ->field('m.*,b.name,b.hy_1_desc,b.fee,b.day_grow,b.grow_status,b.grow,b.unit_value,b.weight,b.amend_weight,b.sell_weight,b.grow_weight,b.avg_value1,b.avg_value2')
             ->where('m.my_fund_status','=',1)
             ->order('day_nums desc,grow_weight desc')
             ->select();
@@ -942,10 +948,14 @@ class Fund extends Controller{
             if($v['avg_value1']>$v['avg_value2']){
                 $st2 = 1;
             }
+            $avg = '大于5日均值';
+            if ($v['unit_value']<=$v['avg_value1']) {
+                $avg = '小于5日均值';
+            }
             $desc = $v['my_fund_status']==1?'持有': '卖出';
             $money = $yields*$v['buy_fund_money']/100;
             $all_money += $money;
-            echo '编码: '.$v['my_fund_code'].'   购买日期: '.$v['buy_date'].'   权重: '.$v['weight'].'   修正卖权重: '.round(($v['sell_weight']+$v['grow_weight']),2).'    费率%: '.($v['fee']/10000).'    持有天数: '.$v['day_nums'].'   今日预增长%: '.$v['grow_weight'].'    今日预收益%: '.$yields.' &nbsp;金额:'.$money.' &nbsp;st1-st2: &nbsp;'.$st1.'-'.$st2.' &nbsp;&nbsp;'.$desc.' &nbsp;&nbsp;&nbsp;&nbsp;'.$v['name'];
+            echo '编码: '.$v['my_fund_code'].'   购买日期: '.$v['buy_date'].'   权重: '.$v['weight'].'   修正卖权重: '.round(($v['sell_weight']+$v['grow_weight']),2).'    费率%: '.($v['fee']/10000).'    持有天数: '.$v['day_nums'].'   今日预增长%: '.$v['grow_weight'].'    今日预收益%: '.$yields.' &nbsp;金额:'.$money.' &nbsp;st1-st2: &nbsp;'.$st1.'-'.$st2.' &nbsp;&nbsp;'.$avg.' &nbsp;&nbsp;'.$desc.' &nbsp;&nbsp;&nbsp;&nbsp;'.$v['hy_1_desc'].' &nbsp;&nbsp;&nbsp;&nbsp;'.$v['name'];
             echo '</br>';
             echo '</br>';
         }
