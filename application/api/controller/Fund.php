@@ -656,6 +656,8 @@ class Fund extends Controller{
                         $all_data[$k]['amend_weight']=$amend_weight['weight'];
                         $all_data[$k]['grow_weight']=$vv['gszzl']*1;
                         $all_data[$k]['diff_weight'] = $v['weight']-$all_data[$k]['amend_weight'];
+                        $all_data[$k]['sell_weight'] = $all_data[$k]['amend_weight'];
+                        $all_data[$k]['buy_weight']=$all_data[$k]['amend_weight'];
                         if($v['day_grow']>0){
                             $all_data[$k]['sell_weight']=$all_data[$k]['amend_weight']+$v['day_grow']/10000;
                         }else{
@@ -722,7 +724,7 @@ class Fund extends Controller{
         $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
 
         $pq_bool = $this->is_open_date();
-        if($is_gzr==0&&$pq_bool==1){
+        //if($is_gzr==0&&$pq_bool==1){
             $base = new FundBase;
             $str = Cache::get('base_data');
             $arr = json_decode($str,true);
@@ -731,7 +733,7 @@ class Fund extends Controller{
                 $base->saveAll($v);
             }
             return 1;
-        }
+        //}
         echo 0;
     }
     //  删除无效的信息
@@ -839,15 +841,16 @@ class Fund extends Controller{
     }
     //  得到今日可买基金列表
     public function getBuyFund(){
-        // http://www.daniel.com/api/fund/getBuyFund?w=0.5&fee=0.15&sd=buy_weight
+        // http://www.daniel.com/api/fund/getBuyFund?sd=buy_weight
         $base = new FundBase;
-        // $where[] = array('diff_weight','>',0.01);
+        $where[] = array('diff_weight','>',0.08);
         //$where[] = array('diff_weight','<=',1.3);
         $where[] = array('buy_status','=',0);
         //$where[] = array('weight','<',2.5);
         //$where[] = array('sell_diff_buy_weight','<',2.5);
-        $where[] = array('week_grow','>=',40000);
+        $where[] = array('week_grow','>=',45000);
         // $where[] = array('hy_1_desc','<>','行业说明');
+        $where[] = array('fee','<=',input('param.fee')*600);
         $sort_code = 'weight';
         $sort_type = 'desc';
         if(input('param.sd')){
