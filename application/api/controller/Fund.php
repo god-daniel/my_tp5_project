@@ -648,7 +648,7 @@ class Fund extends Controller{
                         $all_data[$k]['unit_value'] = $vv['gsz']*10000;
                         $all_data[$k]['grow'] = $vv['gszzl']*10000;
 
-                        $temp['day_grow']=$v['day_grow'];
+                        $temp['day_grow']=$all_data[$k]['grow'];
                         $temp['week_grow']=$all_data[$k]['grow']+$v['week_grow'];
                         $temp['month_grow']=$all_data[$k]['grow']+$v['month_grow'];
                         $temp['month_three_grow']=$all_data[$k]['grow']+$v['month_three_grow'];
@@ -841,13 +841,13 @@ class Fund extends Controller{
     public function getBuyFund(){
         // http://www.daniel.com/api/fund/getBuyFund?w=0.5&fee=0.15&sd=buy_weight
         $base = new FundBase;
-        $where[] = array('diff_weight','>',-0.1);
+        $where[] = array('diff_weight','>',0.01);
         //$where[] = array('diff_weight','<=',1.3);
         $where[] = array('buy_status','=',0);
         //$where[] = array('weight','<',2.5);
         //$where[] = array('sell_diff_buy_weight','<',2.5);
-        $where[] = array('month_grow','>=',130000);
-        $where[] = array('hy_1_desc','<>','行业说明');
+        // $where[] = array('month_grow','>=',130000);
+        // $where[] = array('hy_1_desc','<>','行业说明');
         $sort_code = 'weight';
         $sort_type = 'desc';
         if(input('param.sd')){
