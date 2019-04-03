@@ -187,6 +187,9 @@ class Fund extends Controller{
                 ->alias('m')
                 ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
                 ->field('group_concat(distinct(b.id)) as ids')->where($where)->select();
+            if (!$data[0]['ids']) {
+                return 1;
+            }
             $host = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/updateTodayFund?bs=0&ids='.$data[0]['ids'];
             $str = HttpGet($host);
         }
@@ -843,14 +846,14 @@ class Fund extends Controller{
     public function getBuyFund(){
         // http://www.daniel.com/api/fund/getBuyFund?sd=buy_weight
         $base = new FundBase;
-        $where[] = array('diff_weight','>',0.08);
+        $where[] = array('diff_weight','>',0.1);
         //$where[] = array('diff_weight','<=',1.3);
         $where[] = array('buy_status','=',0);
-        //$where[] = array('weight','<',2.5);
+        // $where[] = array('weight','>',0.8);
         //$where[] = array('sell_diff_buy_weight','<',2.5);
-        $where[] = array('week_grow','>=',45000);
+        // $where[] = array('week_grow','>=',15000);
         // $where[] = array('hy_1_desc','<>','行业说明');
-        $where[] = array('fee','<=',input('param.fee')*600);
+        // $where[] = array('fee','<=',input('param.fee')*600);
         $sort_code = 'weight';
         $sort_type = 'desc';
         if(input('param.sd')){
