@@ -863,10 +863,6 @@ class Fund extends Controller{
             $sort_type = input('param.st');
         }
         $sort = $sort_code.' '.$sort_type;
-        if(input('param.code')){
-            unset($where);
-            $where[] = array('code','=',input('param.code'));
-        }
         if(input('param.bw')){
             $where[] = array('buy_weight','>',input('param.bw'));
         }
@@ -884,6 +880,10 @@ class Fund extends Controller{
         }
         if(input('param.fee')){
             $where[] = array('fee','<=',input('param.fee')*10000);
+        }
+        if(input('param.code')){
+            unset($where);
+            $where[] = array('code','=',input('param.code'));
         }
         $temp_diff = $base::field('code')->where($where)->limit(20)->order('diff_weight desc')
             ->select()->toArray();
