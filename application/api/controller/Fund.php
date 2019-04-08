@@ -472,6 +472,126 @@ class Fund extends Controller{
             $base->saveAll($arr);
         }
     }
+    //  每周6更新基金数据
+    public function getFundFee(){
+        set_time_limit(0);
+        if(input('param.code')){
+            $where[] = array('code','=',input('param.code'));
+        }
+        $page_num = 20000;
+        $page = 1;
+        if(input('param.page')){
+            $page = input('param.page');
+            $page_num = 1000;
+        }
+        $page_sd = $page_num*($page-1)+1;
+        $page_ed = $page_num*$page;
+        $where[] = array('id','>=',$page_sd);
+        $where[] = array('id','<=',$page_ed);
+        $base_url = $this->host_info;
+        $rules = [
+            //一个规则只能包含一个function
+            //采集class为pt30的div的第一个h1文本
+            'buy_fee' => ['p.row:eq(2) b:eq(1)','text'],
+            'div' => ['div.boxitem','html','',function($content){
+                //$content是元素
+                $runs = [
+                    'h4' => ['h4','text'],
+                    //得到a标签的链接属性
+                    // 'table' => ['table:eq(0)','html'],
+                    'tr1' => ['table:eq(0) tbody tr:eq(0)','text'],
+                    'tr2' => ['table:eq(0) tbody tr:eq(1)','text'],
+                ];
+                $num = QueryList::html($content)->rules($runs)->query()->getData()->all();
+                return $num;
+            }],
+        ];
+
+        $base = new FundBase;
+        $all_data = $base::where($where)->order('code asc')->select()->toArray();
+        $arr = [];
+        foreach ($all_data as $k=>$v){
+            $code = $all_data[$k]['code'];
+            //$code = '000794';
+            $arr[$k]['id'] = $v['id'];
+            $arr[$k]['code'] = $v['code'];
+            $arr[$k]['create_time'] = 1551577703;  //创建时间
+            $arr[$k]['update_time'] = time();  //更新时间
+            $url = str_replace('$code',$code,$base_url);
+            $ql = QueryList::get($url,null,[
+                'timeout' => 3600]);
+            $data = $ql->rules($rules)->query()->getData()->all();
+            $ql->destruct();
+            $num = count($data);
+            var_dump($data[$num-2]['div'][0]['tr1']);
+            $arr[$k]['fee'] = 10000;
+            if(isset($data[0]['buy_fee'])){
+                $arr[$k]['fee'] = $data[0]['buy_fee']*10000;
+            }
+            if ($data[$num-2]['div'][0]['h4']=='赎回费率') {
+                $arr[$k]['sell_1_fee'] = 0;
+                $arr[$k]['sell_2_fee'] = 0;
+                $arr[$k]['sell_1_day'] = 0;
+                $arr[$k]['sell_2_day'] = 0;
+                if(isset($data[$num-2]['div'][0]['tr1'])){
+                    $arr[$k]['sell_1_fee'] = substr($data[$num-2]['div'][0]['tr1'],-5)*1;
+                    $index_1_num = mb_strrpos($data[$num-2]['div'][0]['tr1'], '于');
+                    if($index_1_num){
+                        $day_type = mb_substr($data[$num-2]['div'][0]['tr1'],$index_1_num+2, 1);
+                        $day_value = mb_substr($data[$num-2]['div'][0]['tr1'],$index_1_num+1, 1);
+                        switch ($day_type){
+                            case '年':
+                                $day_num = 365;
+                                break;
+                            case '月' :
+                                $day_num = 30;
+                                break;
+                            case '天' :
+                                $day_num = 1;
+                                break;
+                            default :
+                                $day_num = 1;
+                                $day_value = mb_substr($data[$num-2]['div'][0]['tr1'],$index_1_num+1, 2);
+                                break;
+                        }
+                        $arr[$k]['sell_1_day'] = $day_value*$day_num;
+                    }
+                }
+                if(isset($data[$num-2]['div'][0]['tr2'])){
+                    $arr[$k]['sell_2_fee'] = substr($data[$num-2]['div'][0]['tr2'],-5)*1;
+                    $index_2_num = mb_strrpos($data[$num-2]['div'][0]['tr2'], '于');
+                    if($index_2_num){
+                        $diff_2_num = mb_strrpos($data[$num-2]['div'][0]['tr2'], '天');
+                        $day_type = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+2, 1);
+                        $day_value = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+1, $diff_2_num-$index_2_num-1);
+                        if($diff_2_num>$index_2_num){
+                            $day_value = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+1, $diff_2_num-$index_2_num-1);
+                        }
+                        var_dump($day_type);
+                        switch ($day_type){
+                            case '年':
+                                $day_num = 365;
+                                break;
+                            case '月' :
+                                $day_num = 30;
+                                break;
+                            case '天' :
+                                $day_num = 1;
+                                var_dump(111);
+                                break;
+                            default :
+                                $day_num = 1;
+                                // $day_value = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+1, 2);
+                                break;
+                        }
+                        $arr[$k]['sell_2_day'] = $day_value*$day_num;
+                    }
+                }
+            }
+            var_dump($arr[$k]);
+        }
+        // $base->saveAll($arr);
+    }
     //  添加历史日基金数据
     public function addHistoryFund(){
         set_time_limit(0);
