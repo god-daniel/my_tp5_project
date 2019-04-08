@@ -864,6 +864,7 @@ class Fund extends Controller{
         }
         $sort = $sort_code.' '.$sort_type;
         if(input('param.code')){
+            unset($where);
             $where[] = array('code','=',input('param.code'));
         }
         if(input('param.bw')){
