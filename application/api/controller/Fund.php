@@ -322,7 +322,8 @@ class Fund extends Controller{
 
     //  每周6更新基金数据
     public function getCronFee(){
-        for($i=30;$i<302;$i++){
+        set_time_limit(0);
+        for($i=1;$i<302;$i++){
             $host = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/getFundFee?page='.$i;
             $str = HttpGet($host);
         }
@@ -921,7 +922,7 @@ class Fund extends Controller{
             if ($v['unit_value']<=$v['avg_value1']) {
                 $avg = '小于5日均值';
             }
-            echo '编码: '.$v['code'].'  权重: '.$v['weight'].'  修正差值: '.$v['diff_weight'].'  修正买权重: '.$v['buy_weight'].'  卖权重: '.$v['sell_weight'].'  费率%: '.($v['fee']/10000).'  今日预增长%: '.$v['grow_weight'].' &nbsp;&nbsp;'.$avg.' &nbsp;&nbsp;'.$v['hy_1_desc'].' &nbsp;&nbsp;'.$v['name'];
+            echo '编码: '.$v['code'].'  权重: '.$v['weight'].'  修正差值: '.$v['diff_weight'].'  修正买权重: '.$v['buy_weight'].'  卖权重: '.$v['sell_weight'].'  买费率%: '.($v['fee']/10000).'% '.'  大于'.$v['sell_1_day'].'天卖费率'.$v['sell_2_fee'].'% '.'  今日预增长%: '.$v['grow_weight'].' &nbsp;&nbsp;'.$avg.' &nbsp;&nbsp;'.$v['hy_1_desc'].' &nbsp;&nbsp;'.$v['name'];
             echo '</br>';
             echo '</br>';
         }
@@ -933,7 +934,7 @@ class Fund extends Controller{
         $data = Db::table('sp_my_fund')
             ->alias('m')
             ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
-            ->field('m.*,b.name,b.hy_1_desc,b.fee,b.day_grow,b.grow_status,b.grow,b.unit_value,b.weight,b.amend_weight,b.sell_weight,b.grow_weight,b.avg_value1,b.avg_value2')
+            ->field('m.*,b.name,b.hy_1_desc,b.fee,b.day_grow,b.grow_status,b.grow,b.unit_value,b.weight,b.amend_weight,b.sell_weight,b.grow_weight,b.avg_value1,b.avg_value2,b.sell_2_fee')
             ->where('m.my_fund_status','=',1)
             ->order('day_nums desc,grow_weight desc')
             ->select();
@@ -961,7 +962,7 @@ class Fund extends Controller{
             $desc = $v['my_fund_status']==1?'持有': '卖出';
             $money = $yields*$v['buy_fund_money']/100;
             $all_money += $money;
-            echo '编码: '.$v['my_fund_code'].'   购买日期: '.$v['buy_date'].'   权重: '.$v['weight'].'   修正卖权重: '.round(($v['sell_weight']+$v['grow_weight']),2).'    费率%: '.($v['fee']/10000).'    持有天数: '.$v['day_nums'].'   今日预增长%: '.$v['grow_weight'].'    今日预收益%: '.$yields.' &nbsp;金额:'.$money.' &nbsp;st1-st2: &nbsp;'.$st1.'-'.$st2.' &nbsp;&nbsp;'.$avg.' &nbsp;&nbsp;'.$desc.' &nbsp;&nbsp;&nbsp;&nbsp;'.$v['hy_1_desc'].' &nbsp;&nbsp;&nbsp;&nbsp;'.$v['name'];
+            echo '编码: '.$v['my_fund_code'].'   购买日期: '.$v['buy_date'].'   权重: '.$v['weight'].'   修正卖权重: '.round(($v['sell_weight']+$v['grow_weight']),2).'    费率%: '.($v['fee']/10000).'% '.'  大于'.$v['sell_1_day'].'天卖费率'.$v['sell_2_fee'].'% '.'    持有天数: '.$v['day_nums'].'   今日预增长%: '.$v['grow_weight'].'    今日预收益%: '.$yields.' &nbsp;金额:'.$money.' &nbsp;st1-st2: &nbsp;'.$st1.'-'.$st2.' &nbsp;&nbsp;'.$avg.' &nbsp;&nbsp;'.$desc.' &nbsp;&nbsp;&nbsp;&nbsp;'.$v['hy_1_desc'].' &nbsp;&nbsp;&nbsp;&nbsp;'.$v['name'];
             echo '</br>';
             echo '</br>';
         }
