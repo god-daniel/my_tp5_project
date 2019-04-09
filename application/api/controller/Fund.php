@@ -319,157 +319,12 @@ class Fund extends Controller{
             var_dump($host);
         }
     }
+
     //  每周6更新基金数据
-    public function updateFund(){
-        set_time_limit(0);
-        $is_gzr = 0;
-        $page = 1;
-        if(input('param.page')){
-            $page = input('param.page');
-        }
-        $page_sd = 1000*($page-1)+1;
-        $page_ed = 1000*$page;
-        //$is_gzr = 0;
-        if($is_gzr==0){
-
-            $base_url = $this->host_info;
-            $rules = [
-                //一个规则只能包含一个function
-                //采集class为pt30的div的第一个h1文本
-                // 'all_html' => ['.r_cont','html'],.r_cont>.basic-new>.bs_jz>
-                'unit_value' => ['#fund_gsz','text'],
-                'grow' => ['#fund_gszf','text'],
-                'buy_desc' => ['p.row:eq(1) span:eq(0)','text'],
-                'sell_desc' => ['p.row:eq(1) span:eq(2)','text'],
-                'fee' => ['p.row:eq(2) b:eq(1)','text'],
-                'create_date' => ['.bs_gl p:eq(0) span:eq(0)','text'],
-                'type_desc' => ['.bs_gl p:eq(0) span:eq(1)','text'],
-                'unit_pile_size_desc' => ['.bs_gl p:eq(0) span:eq(2)','text'],
-                'year_manage_fee' => ['table.w770:eq(4) td:eq(1)','text'],
-                'year_deposit_fee' => ['table.w770:eq(4) td:eq(3)','text'],
-                'year_sell_fee' => ['table.w770:eq(4) td:eq(5)','text'],
-                'sell_1_fee' => ['table.w650:eq(2) tr:eq(1) td:eq(2)','text'],
-                'sell_1_day' => ['table.w650:eq(2) tr:eq(1) td:eq(1)','text'],
-                'sell_2_fee' => ['table.w650:eq(2) tr:eq(2) td:eq(2)','text'],
-                'sell_2_day' => ['table.w650:eq(2) tr:eq(2) td:eq(1)','text'],
-            ];
-            // $data = $ql->rules($rules)->query()->getData()->all();
-
-            $base = new FundBase;
-            $all_data = $base::where('id','>=',$page_sd)->where('id','<=',$page_ed)->order('code asc')->select()->toArray();
-            $arr = [];
-            foreach ($all_data as $k=>$v){
-                $code = $all_data[$k]['code'];
-                //$code = '000794';
-                $arr[$k]['create_time'] = 1551577703;  //创建时间
-                $arr[$k]['update_time'] = time();  //更新时间
-                $url = str_replace('$code',$code,$base_url);
-                $ql = QueryList::get($url,null,[
-                    'timeout' => 3600]);
-                $data = $ql->rules($rules)->query()->getData()->all();
-                $ql->destruct();
-                $arr[$k] = $data[0];
-                $arr[$k]['url'] = $url;
-                $arr[$k]['id'] = $v['id'];
-                $arr[$k]['code'] = $v['code'];
-                if(((int)$arr[$k]['unit_value'])){
-                    $arr[$k]['unit_value'] = $arr[$k]['unit_value']*10000;
-                }else{
-                    $arr[$k]['unit_value'] = 0;
-                }
-                if(((int)$arr[$k]['grow'])){
-                    $arr[$k]['grow'] = $arr[$k]['grow']*10000;
-                }else{
-                    $arr[$k]['grow'] = 0;
-                }
-                if(((int)$arr[$k]['fee'])){
-                    $arr[$k]['fee'] = $arr[$k]['fee']*10000;
-                }else{
-                    $arr[$k]['fee'] = 10000;
-                }
-                if(((int)$arr[$k]['sell_1_fee'])){
-                    $arr[$k]['sell_1_fee'] = $arr[$k]['sell_1_fee']*10000;
-                }else{
-                    $arr[$k]['sell_1_fee'] = 10000;
-                }
-                if(((int)$arr[$k]['sell_2_fee'])){
-                    $arr[$k]['sell_2_fee'] = $arr[$k]['sell_2_fee']*10000;
-                }else{
-                    $arr[$k]['sell_2_fee'] = 10000;
-                }
-
-                if($arr[$k]['unit_pile_size']){
-                    $arr[$k]['unit_pile_size'] =substr($arr[$k]['unit_pile_size_desc'],0,strpos($arr[$k]['unit_pile_size_desc'],'亿'))*100;
-                }else{
-                    $arr[$k]['unit_pile_size'] = 0;
-                }
-
-                if($arr[$k]['year_manage_fee']){
-                    $test = substr($arr[$k]['year_manage_fee'],0,strpos($arr[$k]['year_manage_fee'],'%'));
-                    if(strlen($test)>10||!$test ){
-                        $arr[$k]['year_manage_fee'] =10000;
-                    }else{
-                        $arr[$k]['year_manage_fee'] =$test*100;
-                    }
-                }else{
-                    $arr[$k]['year_manage_fee'] = 10000;
-                }
-                if($arr[$k]['year_deposit_fee']){
-                    $arr[$k]['year_deposit_fee'] =substr($arr[$k]['year_deposit_fee'],0,strpos($arr[$k]['year_deposit_fee'],'%'))*100;
-                }else{
-                    $arr[$k]['year_deposit_fee'] = 10000;
-                }
-                if(strpos($arr[$k]['year_sell_fee'], '%')!== false){
-                    $arr[$k]['year_sell_fee'] =substr($arr[$k]['year_sell_fee'],0,strpos($arr[$k]['year_sell_fee'],'%'))*100;
-                }else{
-                    $arr[$k]['year_sell_fee'] = 0;
-                }
-                if(mb_substr($arr[$k]['sell_1_day'], -1)=='年'){
-                    $arr[$k]['sell_1_day'] = mb_strrchr($arr[$k]['sell_1_day'],'于');
-                    $arr[$k]['sell_1_day'] = mb_substr($arr[$k]['sell_1_day'],1, -1)*365;
-                }else{
-                    if(strpos($arr[$k]['sell_1_day'], '于')!== false){
-                        if(mb_substr($arr[$k]['sell_1_day'], -1)=='月'){// 个月
-                            $arr[$k]['sell_1_day'] = mb_strrchr($arr[$k]['sell_1_day'],'于');
-                            $arr[$k]['sell_1_day'] = mb_substr($arr[$k]['sell_1_day'],1, -2)*30;
-                        }elseif(mb_substr($arr[$k]['sell_1_day'], -1)=='天'){
-                            $arr[$k]['sell_1_day'] = mb_strrchr($arr[$k]['sell_1_day'],'于');
-                            $arr[$k]['sell_1_day'] = mb_substr($arr[$k]['sell_1_day'],1, -1)*1;
-                        }else{
-                            $arr[$k]['sell_1_day'] = 10000;
-                        }
-                    }else{
-                        $arr[$k]['sell_1_day'] = 10000;
-                    }
-                }
-                if(mb_substr($arr[$k]['sell_2_day'], -1)=='年'){
-                    $arr[$k]['sell_2_day'] = mb_strrchr($arr[$k]['sell_2_day'],'于');
-                    if($arr[$k]['sell_2_day']){
-                        $arr[$k]['sell_2_day'] = mb_substr($arr[$k]['sell_2_day'],1, -1)*365;
-                    }else{
-                        $arr[$k]['sell_2_day'] = 365;
-                    }
-                }else{
-                    if(strpos($arr[$k]['sell_2_day'], '于')!== false){
-                        if(mb_substr($arr[$k]['sell_2_day'], -1)=='月'){// 个月
-                            $arr[$k]['sell_2_day'] = mb_strrchr($arr[$k]['sell_2_day'],'于');
-                            $arr[$k]['sell_2_day'] = mb_substr($arr[$k]['sell_2_day'],1, -2)*30;
-                        }elseif(mb_substr($arr[$k]['sell_2_day'], -1)=='天'){
-                            $arr[$k]['sell_2_day'] = mb_strrchr($arr[$k]['sell_2_day'],'于');
-                            $arr[$k]['sell_2_day'] = mb_substr($arr[$k]['sell_2_day'],1, -1)*1;
-                        }else{
-                            $arr[$k]['sell_2_day'] = 10000;
-                        }
-                    }else{
-                        $arr[$k]['sell_2_day'] = 10000;
-                    }
-                }
-                $arr[$k]['buy_status'] = 1;
-                if($arr[$k]['buy_desc']=='开放申购') {
-                    $arr[$k]['buy_status'] = 0;
-                }
-            }
-            $base->saveAll($arr);
+    public function getCronFee(){
+        for($i=30;$i<302;$i++){
+            $host = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/getFundFee?page='.$i;
+            $str = HttpGet($host);
         }
     }
     //  每周6更新基金数据
@@ -482,7 +337,7 @@ class Fund extends Controller{
         $page = 1;
         if(input('param.page')){
             $page = input('param.page');
-            $page_num = 1000;
+            $page_num = 30;
         }
         $page_sd = $page_num*($page-1)+1;
         $page_ed = $page_num*$page;
@@ -522,6 +377,9 @@ class Fund extends Controller{
                 'timeout' => 3600]);
             $data = $ql->rules($rules)->query()->getData()->all();
             $ql->destruct();
+            echo $v['code'];
+            echo '</br>';
+            //var_dump($data);
             $num = count($data);
             $arr[$k]['fee'] = 10000;
             if(isset($data[0]['buy_fee'])){
