@@ -380,35 +380,43 @@ class Fund extends Controller{
             $ql->destruct();
             echo $v['code'];
             echo '</br>';
-            //var_dump($data);
+            var_dump($data);die;
             $num = count($data);
             $arr[$k]['fee'] = 10000;
             if(isset($data[0]['buy_fee'])){
                 $arr[$k]['fee'] = $data[0]['buy_fee']*10000;
             }
-            if ($data[$num-2]['div'][0]['h4']=='赎回费率') {
+            $bool = 0;
+            if($data[$num-2]['div'][0]['h4']=='赎回费率'||$data[$num-3]['div'][0]['h4']=='赎回费率（前端）'){
+                $bool = 1;
+                $d_num = 2;
+                if($data[$num-3]['div'][0]['h4']=='赎回费率（前端）'){
+                    $d_num = 3;
+                }
+            }
+            if ($bool) {
                 $arr[$k]['sell_1_fee'] = 0;
                 $arr[$k]['sell_2_fee'] = 0;
                 $arr[$k]['sell_1_day'] = 0;
                 $arr[$k]['sell_2_day'] = 0;
-                if(isset($data[$num-2]['div'][0]['tr1'])){
-                    $arr[$k]['sell_1_fee'] = substr($data[$num-2]['div'][0]['tr1'],-5)*1;
-                    $index_1_num = mb_strrpos($data[$num-2]['div'][0]['tr1'], '于');
+                if(isset($data[$num-$d_num]['div'][0]['tr1'])){
+                    $arr[$k]['sell_1_fee'] = substr($data[$num-$d_num]['div'][0]['tr1'],-5)*1;
+                    $index_1_num = mb_strrpos($data[$num-$d_num]['div'][0]['tr1'], '于');
                     if($index_1_num){
-                        $diff_day_num = mb_strrpos($data[$num-2]['div'][0]['tr1'], '天');
-                        $diff_m_num = mb_strrpos($data[$num-2]['div'][0]['tr1'], '月');
-                        $diff_y_num = mb_strrpos($data[$num-2]['div'][0]['tr1'], '年');
+                        $diff_day_num = mb_strrpos($data[$num-$d_num]['div'][0]['tr1'], '天');
+                        $diff_m_num = mb_strrpos($data[$num-$d_num]['div'][0]['tr1'], '月');
+                        $diff_y_num = mb_strrpos($data[$num-$d_num]['div'][0]['tr1'], '年');
                         if($diff_day_num>$index_1_num){
-                            $day_type = mb_substr($data[$num-2]['div'][0]['tr1'],$diff_day_num, 1);
-                            $day_value = mb_substr($data[$num-2]['div'][0]['tr1'],$index_1_num+1, $diff_day_num-$index_1_num-1);
+                            $day_type = mb_substr($data[$num-$d_num]['div'][0]['tr1'],$diff_day_num, 1);
+                            $day_value = mb_substr($data[$num-$d_num]['div'][0]['tr1'],$index_1_num+1, $diff_day_num-$index_1_num-1);
                         }
                         if($diff_m_num>$index_1_num){
-                            $day_type = mb_substr($data[$num-2]['div'][0]['tr1'],$diff_m_num, 1);
-                            $day_value = mb_substr($data[$num-2]['div'][0]['tr1'],$index_1_num+1, $diff_m_num-$index_1_num-1);
+                            $day_type = mb_substr($data[$num-$d_num]['div'][0]['tr1'],$diff_m_num, 1);
+                            $day_value = mb_substr($data[$num-$d_num]['div'][0]['tr1'],$index_1_num+1, $diff_m_num-$index_1_num-1);
                         }
                         if($diff_y_num>$index_1_num){
-                            $day_type = mb_substr($data[$num-2]['div'][0]['tr1'],$diff_y_num, 1);
-                            $day_value = mb_substr($data[$num-2]['div'][0]['tr1'],$index_1_num+1, $diff_y_num-$index_1_num-1);
+                            $day_type = mb_substr($data[$num-$d_num]['div'][0]['tr1'],$diff_y_num, 1);
+                            $day_value = mb_substr($data[$num-$d_num]['div'][0]['tr1'],$index_1_num+1, $diff_y_num-$index_1_num-1);
                         }
                         switch ($day_type){
                             case '年':
@@ -429,24 +437,24 @@ class Fund extends Controller{
                         $arr[$k]['sell_1_day'] = $day_value*$day_num;
                     }
                 }
-                if(isset($data[$num-2]['div'][0]['tr2'])){
-                    $arr[$k]['sell_2_fee'] = substr($data[$num-2]['div'][0]['tr2'],-5)*1;
-                    $index_2_num = mb_strrpos($data[$num-2]['div'][0]['tr2'], '于');
+                if(isset($data[$num-$d_num]['div'][0]['tr2'])){
+                    $arr[$k]['sell_2_fee'] = substr($data[$num-$d_num]['div'][0]['tr2'],-5)*1;
+                    $index_2_num = mb_strrpos($data[$num-$d_num]['div'][0]['tr2'], '于');
                     if($index_2_num){
-                        $diff_day_num = mb_strrpos($data[$num-2]['div'][0]['tr2'], '天');
-                        $diff_m_num = mb_strrpos($data[$num-2]['div'][0]['tr2'], '月');
-                        $diff_y_num = mb_strrpos($data[$num-2]['div'][0]['tr2'], '年');
+                        $diff_day_num = mb_strrpos($data[$num-$d_num]['div'][0]['tr2'], '天');
+                        $diff_m_num = mb_strrpos($data[$num-$d_num]['div'][0]['tr2'], '月');
+                        $diff_y_num = mb_strrpos($data[$num-$d_num]['div'][0]['tr2'], '年');
                         if($diff_day_num>$index_2_num){
-                            $day_type = mb_substr($data[$num-2]['div'][0]['tr2'],$diff_day_num, 1);
-                            $day_value = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+1, $diff_day_num-$index_2_num-1);
+                            $day_type = mb_substr($data[$num-$d_num]['div'][0]['tr2'],$diff_day_num, 1);
+                            $day_value = mb_substr($data[$num-$d_num]['div'][0]['tr2'],$index_2_num+1, $diff_day_num-$index_2_num-1);
                         }
                         if($diff_m_num>$index_2_num){
-                            $day_type = mb_substr($data[$num-2]['div'][0]['tr2'],$diff_m_num, 1);
-                            $day_value = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+1, $diff_m_num-$index_2_num-1);
+                            $day_type = mb_substr($data[$num-$d_num]['div'][0]['tr2'],$diff_m_num, 1);
+                            $day_value = mb_substr($data[$num-$d_num]['div'][0]['tr2'],$index_2_num+1, $diff_m_num-$index_2_num-1);
                         }
                         if($diff_y_num>$index_2_num){
-                            $day_type = mb_substr($data[$num-2]['div'][0]['tr2'],$diff_y_num, 1);
-                            $day_value = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+1, $diff_y_num-$index_2_num-1);
+                            $day_type = mb_substr($data[$num-$d_num]['div'][0]['tr2'],$diff_y_num, 1);
+                            $day_value = mb_substr($data[$num-$d_num]['div'][0]['tr2'],$index_2_num+1, $diff_y_num-$index_2_num-1);
                         }
                         switch ($day_type){
                             case '年':
@@ -604,8 +612,13 @@ class Fund extends Controller{
     }
     //  测试
     public function test(){
-        $str = Cache::get('base_data');
-        var_dump($str);
+        set_time_limit(0);
+        $data = Db::table('sp_fund_base')->field('code')->where('sell_1_fee','=',10000)
+            ->select();
+        foreach ($data as $k => $v){
+            $host = 'http://'.$_SERVER['HTTP_HOST'].'/api/fund/getFundFee?code='.$v['code'];
+            $str = HttpGet($host);
+        }
     }
     //  setNowFundCahe
     public function setNowFundCahe(){
@@ -846,7 +859,7 @@ class Fund extends Controller{
     public function getBuyFund(){
         // http://www.daniel.com/api/fund/getBuyFund?sd=buy_weight
         $base = new FundBase;
-        
+
         //$where[] = array('diff_weight','<=',1.3);
         $where[] = array('buy_status','=',0);
         // $where[] = array('weight','>',0.8);
@@ -939,7 +952,7 @@ class Fund extends Controller{
         $data = Db::table('sp_my_fund')
             ->alias('m')
             ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
-            ->field('m.*,b.name,b.hy_1_desc,b.fee,b.day_grow,b.grow_status,b.grow,b.unit_value,b.weight,b.amend_weight,b.sell_weight,b.grow_weight,b.avg_value1,b.avg_value2,b.sell_2_fee')
+            ->field('m.*,b.name,b.hy_1_desc,b.fee,b.day_grow,b.grow_status,b.grow,b.unit_value,b.weight,b.amend_weight,b.sell_weight,b.grow_weight,b.avg_value1,b.avg_value2,b.sell_2_fee,b.sell_1_day')
             ->where('m.my_fund_status','=',1)
             ->order('day_nums desc,grow_weight desc')
             ->select();
@@ -978,11 +991,10 @@ class Fund extends Controller{
     //  计算我的收益金额
     public function countMyFund(){
         $where[] = array('my_fund_status','=',2);
-        //$where[] = array('m.sell_date','=',0);
         $data = Db::table('sp_my_fund')
             ->alias('m')
             ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
-            ->field('m.*,b.fee,b.num_2_value,b.num_1_value,b.sell_1_fee,b.sell_2_fee,b.sell_1_day,b.sell_2_day')
+            ->field('m.*,b.fee,b.num_2_value,b.num_1_value,b.num_1_date,b.sell_1_fee,b.sell_2_fee,b.sell_1_day,b.sell_2_day')
             ->where($where)
             ->order('day_nums desc,grow_weight desc')
             ->select();
@@ -990,23 +1002,73 @@ class Fund extends Controller{
         $arr = [];
         foreach ($data as $k=>$v) {
             $date = date("Y-m-d",(strtotime($v['buy_date'])+3600*24*$v['day_nums']));
-            $t = (($v['num_1_value'] - $v['buy_fund_value']) / $v['buy_fund_value'])*$v['buy_fund_money']+$v['buy_fund_money'];
-            $sell_money = round($t, 2);
             $arr[$k]['my_id'] = $v['my_id'];
             $arr[$k]['sell_date'] = $date;
-            $arr[$k]['sell_money'] = $sell_money;
-            $fee_money = 0;
-            $buy_fee = $v['fee']*$v['buy_fund_money']/10000;
-            if($v['day_nums']<$v['sell_1_day']){
-                $fee_money = $buy_fee+$v['sell_1_fee']*($sell_money-$buy_fee)/10000;
+            if($date==$v['num_1_date']){
+                $t = (($v['num_1_value'] - $v['buy_fund_value']) / $v['buy_fund_value'])*$v['buy_fund_money']+$v['buy_fund_money'];
+                $sell_money = round($t, 2);
+                $arr[$k]['sell_money'] = $sell_money;
+                $fee_money = 0;
+                $buy_fee = $v['fee']*$v['buy_fund_money']/1000000;
+
+                if($v['day_nums']<$v['sell_1_day']){
+                    $fee_money = $buy_fee+$v['sell_1_fee']*($sell_money-$buy_fee)/100;
+                }
+                if($v['day_nums']>=$v['sell_1_day']){
+                    $fee_money = $buy_fee+$v['sell_2_fee']*($sell_money-$buy_fee)/100;
+                }
+                $profit = $sell_money - $fee_money - $v['buy_fund_money'];
+                $yields = round($profit/$v['buy_fund_money'], 4)*100;
+                $arr[$k]['yields'] = $yields;
+                $arr[$k]['sell_fund_value'] = $v['num_1_value'];
+                $arr[$k]['profit'] = round($profit,2);
+                $arr[$k]['fee_money'] = round($fee_money,2);
+                $arr[$k]['my_fund_status'] = 3;
             }
-            if($v['day_nums']>=$v['sell_1_day']){
-                $fee_money = $buy_fee+$v['sell_2_fee']*($sell_money-$buy_fee)/10000;
+        }
+        $base = new MyFund;
+        $base->saveAll($arr);
+    }
+    //  计算我的收益金额
+    public function countMyFundTwo(){
+        $where[] = array('my_fund_status','=',2);
+        $where[] = array('sell_date','>',0);
+        $where[] = array('sell_fund_value','=',0);
+        $data = Db::table('sp_my_fund')
+            ->alias('m')
+            ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
+            ->leftJoin('sp_fund_day_list d','m.my_fund_code = d.code and m.sell_date = d.update_date')
+            ->field('m.*,d.unit_value as num_1_value,d.update_date,b.fee,b.sell_1_fee,b.sell_2_fee,b.sell_1_day,b.sell_2_day')
+            ->where($where)
+            ->order('day_nums desc,grow_weight desc')
+            ->select();
+
+        $arr = [];
+        foreach ($data as $k=>$v) {
+            //var_dump($v);die;
+            $date = date("Y-m-d",(strtotime($v['buy_date'])+3600*24*$v['day_nums']));
+            if($v['sell_1_fee']<10000&&$v['sell_2_fee']<10000&&$date==$v['update_date']){
+                $t = (($v['num_1_value'] - $v['buy_fund_value']) / $v['buy_fund_value'])*$v['buy_fund_money']+$v['buy_fund_money'];
+                $sell_money = round($t, 2);
+                $arr[$k]['my_id'] = $v['my_id'];
+                $arr[$k]['sell_date'] = $date;
+                $arr[$k]['sell_money'] = $sell_money;
+                $fee_money = 0;
+                $buy_fee = $v['fee']*$v['buy_fund_money']/1000000;
+                if($v['day_nums']<$v['sell_1_day']){
+                    $fee_money = $buy_fee+$v['sell_1_fee']*($sell_money-$buy_fee)/100;
+                }
+                if($v['day_nums']>=$v['sell_1_day']){
+                    $fee_money = $buy_fee+$v['sell_2_fee']*($sell_money-$buy_fee)/100;
+                }
+                $profit = $sell_money - $fee_money - $v['buy_fund_money'];
+                $yields = round($profit/$v['buy_fund_money'], 4)*100;
+                $arr[$k]['yields'] = $yields;
+                $arr[$k]['sell_fund_value'] = $v['num_1_value'];
+                $arr[$k]['profit'] = round($profit,2);
+                $arr[$k]['fee_money'] = round($fee_money,2);
+                $arr[$k]['my_fund_status'] = 3;
             }
-            $profit = $sell_money - $fee_money;
-            $arr[$k]['profit'] = round($profit,2);
-            $arr[$k]['fee_money'] = round($fee_money,2);
-            $arr[$k]['my_fund_status'] = 3;
         }
         $base = new MyFund;
         $base->saveAll($arr);
