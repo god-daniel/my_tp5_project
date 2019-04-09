@@ -523,7 +523,6 @@ class Fund extends Controller{
             $data = $ql->rules($rules)->query()->getData()->all();
             $ql->destruct();
             $num = count($data);
-            var_dump($data[$num-2]['div'][0]['tr1']);
             $arr[$k]['fee'] = 10000;
             if(isset($data[0]['buy_fee'])){
                 $arr[$k]['fee'] = $data[0]['buy_fee']*10000;
@@ -537,8 +536,21 @@ class Fund extends Controller{
                     $arr[$k]['sell_1_fee'] = substr($data[$num-2]['div'][0]['tr1'],-5)*1;
                     $index_1_num = mb_strrpos($data[$num-2]['div'][0]['tr1'], '于');
                     if($index_1_num){
-                        $day_type = mb_substr($data[$num-2]['div'][0]['tr1'],$index_1_num+2, 1);
-                        $day_value = mb_substr($data[$num-2]['div'][0]['tr1'],$index_1_num+1, 1);
+                        $diff_day_num = mb_strrpos($data[$num-2]['div'][0]['tr1'], '天');
+                        $diff_m_num = mb_strrpos($data[$num-2]['div'][0]['tr1'], '月');
+                        $diff_y_num = mb_strrpos($data[$num-2]['div'][0]['tr1'], '年');
+                        if($diff_day_num>$index_1_num){
+                            $day_type = mb_substr($data[$num-2]['div'][0]['tr1'],$diff_day_num, 1);
+                            $day_value = mb_substr($data[$num-2]['div'][0]['tr1'],$index_1_num+1, $diff_day_num-$index_1_num-1);
+                        }
+                        if($diff_m_num>$index_1_num){
+                            $day_type = mb_substr($data[$num-2]['div'][0]['tr1'],$diff_m_num, 1);
+                            $day_value = mb_substr($data[$num-2]['div'][0]['tr1'],$index_1_num+1, $diff_m_num-$index_1_num-1);
+                        }
+                        if($diff_y_num>$index_1_num){
+                            $day_type = mb_substr($data[$num-2]['div'][0]['tr1'],$diff_y_num, 1);
+                            $day_value = mb_substr($data[$num-2]['div'][0]['tr1'],$index_1_num+1, $diff_y_num-$index_1_num-1);
+                        }
                         switch ($day_type){
                             case '年':
                                 $day_num = 365;
@@ -550,8 +562,9 @@ class Fund extends Controller{
                                 $day_num = 1;
                                 break;
                             default :
-                                $day_num = 1;
-                                $day_value = mb_substr($data[$num-2]['div'][0]['tr1'],$index_1_num+1, 2);
+                                $day_num = 0;
+                                echo $v['code'];
+                                echo '</br>';
                                 break;
                         }
                         $arr[$k]['sell_1_day'] = $day_value*$day_num;
@@ -561,13 +574,21 @@ class Fund extends Controller{
                     $arr[$k]['sell_2_fee'] = substr($data[$num-2]['div'][0]['tr2'],-5)*1;
                     $index_2_num = mb_strrpos($data[$num-2]['div'][0]['tr2'], '于');
                     if($index_2_num){
-                        $diff_2_num = mb_strrpos($data[$num-2]['div'][0]['tr2'], '天');
-                        $day_type = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+2, 1);
-                        $day_value = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+1, $diff_2_num-$index_2_num-1);
-                        if($diff_2_num>$index_2_num){
-                            $day_value = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+1, $diff_2_num-$index_2_num-1);
+                        $diff_day_num = mb_strrpos($data[$num-2]['div'][0]['tr2'], '天');
+                        $diff_m_num = mb_strrpos($data[$num-2]['div'][0]['tr2'], '月');
+                        $diff_y_num = mb_strrpos($data[$num-2]['div'][0]['tr2'], '年');
+                        if($diff_day_num>$index_2_num){
+                            $day_type = mb_substr($data[$num-2]['div'][0]['tr2'],$diff_day_num, 1);
+                            $day_value = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+1, $diff_day_num-$index_2_num-1);
                         }
-                        var_dump($day_type);
+                        if($diff_m_num>$index_2_num){
+                            $day_type = mb_substr($data[$num-2]['div'][0]['tr2'],$diff_m_num, 1);
+                            $day_value = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+1, $diff_m_num-$index_2_num-1);
+                        }
+                        if($diff_y_num>$index_2_num){
+                            $day_type = mb_substr($data[$num-2]['div'][0]['tr2'],$diff_y_num, 1);
+                            $day_value = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+1, $diff_y_num-$index_2_num-1);
+                        }
                         switch ($day_type){
                             case '年':
                                 $day_num = 365;
@@ -577,20 +598,20 @@ class Fund extends Controller{
                                 break;
                             case '天' :
                                 $day_num = 1;
-                                var_dump(111);
                                 break;
                             default :
-                                $day_num = 1;
-                                // $day_value = mb_substr($data[$num-2]['div'][0]['tr2'],$index_2_num+1, 2);
+                                $day_num = 0;
+                                echo $v['code'];
+                                echo '</br>';
                                 break;
                         }
                         $arr[$k]['sell_2_day'] = $day_value*$day_num;
                     }
                 }
             }
-            var_dump($arr[$k]);
+            // var_dump($arr[$k]);
         }
-        // $base->saveAll($arr);
+        $base->saveAll($arr);
     }
     //  添加历史日基金数据
     public function addHistoryFund(){
