@@ -846,7 +846,7 @@ class Fund extends Controller{
     public function getBuyFund(){
         // http://www.daniel.com/api/fund/getBuyFund?sd=buy_weight
         $base = new FundBase;
-        $where[] = array('diff_weight','>',0.1);
+        
         //$where[] = array('diff_weight','<=',1.3);
         $where[] = array('buy_status','=',0);
         // $where[] = array('weight','>',0.8);
@@ -865,6 +865,11 @@ class Fund extends Controller{
         $sort = $sort_code.' '.$sort_type;
         if(input('param.bw')){
             $where[] = array('buy_weight','>',input('param.bw'));
+        }
+        if(input('param.dw')){
+            $where[] = array('diff_weight','>',input('param.dw'));
+        }else{
+            $where[] = array('diff_weight','>',0.1);
         }
         if(input('param.w')){
             $where[] = array('weight','>',input('param.w'));
