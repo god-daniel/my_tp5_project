@@ -378,9 +378,9 @@ class Fund extends Controller{
                 'timeout' => 3600]);
             $data = $ql->rules($rules)->query()->getData()->all();
             $ql->destruct();
-            echo $v['code'];
-            echo '</br>';
-            var_dump($data);die;
+            // echo $v['code'];
+            // echo '</br>';
+            // var_dump($data);die;
             $num = count($data);
             $arr[$k]['fee'] = 10000;
             if(isset($data[0]['buy_fee'])){
