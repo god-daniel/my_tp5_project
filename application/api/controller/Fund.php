@@ -34,7 +34,7 @@ class Fund extends Controller{
         var_dump(112);
     }
 	
-	// 每日录入基金数据 每晚10点添加
+	// 每日录入基金数据 每晚11点40添加
 	public function funList(){
         set_time_limit(0);
 		$is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
@@ -89,10 +89,10 @@ class Fund extends Controller{
             $day_mode->saveAll($day_arr);
 		}		
     }
-    //  更新基金,购买费,周增长，月增长等数据净值 每晚10点30更新
+    //  更新基金,购买费,周增长，月增长等数据净值 每天0点30更新
     public function updateFundBase(){
         set_time_limit(0);
-        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
         if($is_gzr==0){
             $base = new FundBase;
             if(input('param.code')){
@@ -128,10 +128,10 @@ class Fund extends Controller{
             $base->saveAll($data);
         }
     }
-    //  更新10日基金数据净值 每晚11点开始更新
+    //  更新10日基金数据净值 每晚1点开始更新
     public function tenTodayFund(){
         set_time_limit(0);
-        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
         if($is_gzr==0){
             if(input('param.code')){
                 $where[] = array('code','=',input('param.code'));
@@ -260,12 +260,12 @@ class Fund extends Controller{
             $base->saveAll($arr);
         }
     }
-	//  更新基础基金数据 每晚10点20更新
+	//  更新基础基金数据 每晚0点10更新
 	public function addFunList(){
-		$is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+		$is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
 		if($is_gzr==0){
 			Db::query("truncate table sp_fund_base_list");
-			$nowDate = date("Ymd");
+			$nowDate = date("Ymd",strtotime("-1 day"));
 			$url2 = $this->host;
 			$url2 = str_replace('$nowDate',$nowDate,$url2);
 			$list = file_get_contents($url2);		
@@ -564,7 +564,7 @@ class Fund extends Controller{
     //  更新基础基金的日增长，周增长，权重, 上一个5日平均  上上个5日平均
     public function dealFundBase(){
         set_time_limit(0);
-        // http://www.daniel.com/api/fund/todayMyFund
+        // http://www.daniel.com/api/fund/
         $base = new FundBase;
         $data = Db::table('sp_fund_base')
             ->alias('b')
@@ -594,7 +594,7 @@ class Fund extends Controller{
         $data = Db::table('sp_my_fund')
             ->alias('m')
             ->leftJoin('sp_fund_base b','m.my_fund_code = b.code')
-            ->field('m.my_id,m.my_fund_code,m.buy_date,m.day_nums,m.buy_fund_value,m.buy_fund_num,m.buy_fund_money,m.yields,b.num_1_value,b.num_1_date')
+            ->field('m.my_id,m.my_fund_code,m.buy_date,m.sell_date,m.sure_date,m.day_nums,m.buy_fund_value,m.buy_fund_num,m.buy_fund_money,m.yields,b.num_1_value,b.num_1_date')
             ->where('m.my_fund_status','=',1)
             ->select();
         $today = date("Y-m-d");
@@ -604,7 +604,18 @@ class Fund extends Controller{
                 $t = ($data[$k]['buy_fund_money']/$data[$k]['buy_fund_value'])*10000;
                 $data[$k]['buy_fund_num'] = round($t,2);
             }
-            $data[$k]['day_nums'] = (strtotime($today)-strtotime($v['buy_date']))/86400;
+            if($v['sure_date']==0){
+                for($i=1;$i<20;$i++){
+                    $times = strtotime($v['buy_date'])+$i*86400;
+                    $is_gzr = $this->is_jiaoyi_day($times);
+                    if($is_gzr==0){
+                        $i=21;
+                        $v['sure_date'] = date("Y-m-d",$times);
+                        $data[$k]['sure_date'] = $v['sure_date'];
+                    }
+                }
+            }
+            $data[$k]['day_nums'] = (strtotime($today)-strtotime($v['sure_date']))/86400+1;
             $yields = ($v['num_1_value']-$data[$k]['buy_fund_value'])/$data[$k]['buy_fund_value'];
             $data[$k]['yields'] = round($yields,4)*100;
         }
@@ -1045,8 +1056,8 @@ class Fund extends Controller{
 
         $arr = [];
         foreach ($data as $k=>$v) {
-            //var_dump($v);die;
-            $date = date("Y-m-d",(strtotime($v['buy_date'])+3600*24*$v['day_nums']));
+            //;die;
+            $date = date("Y-m-d",(strtotime($v['sure_date'])+3600*24*($v['day_nums']-1)));
             if($v['sell_1_fee']<10000&&$v['sell_2_fee']<10000&&$date==$v['update_date']){
                 $t = (($v['num_1_value'] - $v['buy_fund_value']) / $v['buy_fund_value'])*$v['buy_fund_money']+$v['buy_fund_money'];
                 $sell_money = round($t, 2);
