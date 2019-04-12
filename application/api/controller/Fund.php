@@ -183,7 +183,8 @@ class Fund extends Controller{
     public function updateMyFund(){
         set_time_limit(0);
         $where[] = array('my_fund_status','=',1);
-        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+        $times = time();
+        $is_gzr = $this->is_jiaoyi_day($times);
         if($is_gzr==0){
             $data = Db::table('sp_my_fund')
                 ->alias('m')
