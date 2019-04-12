@@ -92,7 +92,8 @@ class Fund extends Controller{
     //  更新基金,购买费,周增长，月增长等数据净值 每天0点30更新
     public function updateFundBase(){
         set_time_limit(0);
-        $is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
+        $times = time()-86400;
+        $is_gzr = $this->is_jiaoyi_day($times);
         if($is_gzr==0){
             $base = new FundBase;
             if(input('param.code')){
@@ -131,7 +132,8 @@ class Fund extends Controller{
     //  更新10日基金数据净值 每晚1点开始更新
     public function tenTodayFund(){
         set_time_limit(0);
-        $is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
+        $times = time()-86400;
+        $is_gzr = $this->is_jiaoyi_day($times);
         if($is_gzr==0){
             if(input('param.code')){
                 $where[] = array('code','=',input('param.code'));
@@ -262,10 +264,11 @@ class Fund extends Controller{
     }
 	//  更新基础基金数据 每晚0点10更新
 	public function addFunList(){
-		$is_gzr = $this->is_jiaoyi_day(strtotime("-1 day"));
+        $times = time()-86400;
+		$is_gzr = $this->is_jiaoyi_day($times);
 		if($is_gzr==0){
 			Db::query("truncate table sp_fund_base_list");
-			$nowDate = date("Ymd",strtotime("-1 day"));
+			$nowDate = date("Ymd",$times);
 			$url2 = $this->host;
 			$url2 = str_replace('$nowDate',$nowDate,$url2);
 			$list = file_get_contents($url2);		
