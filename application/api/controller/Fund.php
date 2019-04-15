@@ -1107,10 +1107,13 @@ class Fund extends Controller{
 		$date = date("Ymd",time());
 		if($times){
 			$date = date("Ymd",$times);
-		}	
+		}
+
         $url = "http://api.goseek.cn/Tools/holiday?date=".$date;
-        $res = file_get_contents($url);
-        $res = json_decode($res,true);
+        $out_put = $this->pq_http_get($url);
+        $res = json_decode($out_put,true);
+        //$res = file_get_contents($url);
+        //$res = json_decode($res,true);
 		// 正常工作日对应结果为 0, 法定节假日对应结果为 1, 节假日调休补班对应的结果为 2，休息日对应结果为 3 
 		return $res['data'];
     }
