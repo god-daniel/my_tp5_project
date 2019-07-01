@@ -18,19 +18,19 @@ use think\Db;
 use think\facade\Cache;
 use \think\View;
 
-class Fund extends Controller{
+class Market extends Controller{
     private $pageNo;
     private $keywords;
-    // 央行公开逆回购网址  http://www.pbc.gov.cn/zhengcehuobisi/125207/125213/125431/125475/17081/index1.html
-	// 基础基金网址
-	private $host = 'http://fund.eastmoney.com/js/fundcode_search.js?v=$nowDate162803';
-	private $host3 = 'http://fund.eastmoney.com/data/rankhandler.aspx?op=ph&dt=kf&ft=all&rs=&gs=0&sc=dm&st=desc&sd=$sd&ed=$ed&qdii=&tabSubtype=,,,,,&pi=1&pn=20000&dx=1&v=0.8059335981746323';
-    private $now_host = 'http://fund.eastmoney.com/Data/Fund_JJJZ_Data.aspx?t=1&lx=1&letter=&gsid=&text=&sort=bzdm,asc&page=1,19999&feature=|&dt=$dt471&atfc=&onlySale=1';
-    private $info_now_host = 'http://fundgz.1234567.com.cn/js/$code.js?rt=1551755226377';
-    private $jijin_history_host = 'http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code=$code&page=1&per=100&sdate=$sd&edate=$ed';
-    private $host_info = 'http://fundf10.eastmoney.com/jjfl_$code.html';
+
+	// 基础股票采集网址（东方财富）
+	
+	private $host_base = 'http://21.push2.eastmoney.com/api/qt/clist/get?cb=jQuery1124014069351677765463_1561970756781&pn=1&pz=10000&po=0&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f2&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2&fields=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f13,f14,f15,f16,f17,f18,f20,f21,f23,f24,f25,f22,f11,f62,f128,f136,f115,f152&_=1561970756952';
+	
+	// 基础股票采集网址（雪球）
+	private $host_two_base = 'https://xueqiu.com/service/screener/screen?category=CN&exchange=sh_sz&areacode=&indcode=&order_by=current&order=asc&page=1&size=30&only_count=0&current=0.15_1031.86&pct=&pettm=-92162.28_27609.46&pelyr=-1586.19_6279.68&pb=0_1163&fmc=41273971_1596104298231&bps.20190331=-6.17_98.76&eps.20190331=-0.82_8.93&psr=-1587.82_13301&mc=115775000_2109925041967&volume_ratio=0_15.79&pct_current_year=-88.22_522.11&tr=0_50.87&pct10=-43.48_239.51&pct5=-27.32_91.67&psf.20190331=-6.17_98.76&ocps.20190331=-30.65_9.59&epsdiluted.20190331=-0.82_8.93&_=1561973852099';
+	// 股票资金流采集网址（东方财富）
+	private $host_money = 'http://nufm.dfcfw.com/EM_Finance2014NumericApplication/JS.aspx?type=ct&sr=-1&p=1&ps=10000&token=894050c76af8597a853f5b408b759f5d&cmd=C._AB&sty=DCFFITA&rt=52065637';
     private $type = ['定开债券'=>5,'债券型'=>6,'债券指数'=>7,'分级杠杆'=>8,'固定收益'=>9,'保本型'=>10,'货币型'=>11,'联接基金'=>12,'理财型'=>13,'混合-FOF'=>14,'QDII'=>15,'QDII-指数'=>16,'股票型'=>17,'股票指数'=>18,'其他创新'=>19,'ETF-场内'=>20,'混合型'=>21,'QDII-ETF'=>22];
-    private $type_nums = [7,14,15,16,17,18,19,20,21,22];
     public function index(){
         var_dump(112);
     }
