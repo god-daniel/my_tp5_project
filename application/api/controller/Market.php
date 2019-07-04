@@ -24,9 +24,12 @@ class Market extends Controller{
 	private $host_base = 'http://21.push2.eastmoney.com/api/qt/clist/get?cb=jQuery1124014069351677765463_1561970756781&pn=1&pz=10000&po=0&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f2&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2&fields=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f13,f14,f15,f16,f17,f18,f20,f21,f23,f24,f25,f22,f11,f62,f128,f136,f115,f152&_=1561970756952';
 	
 	// 基础股票采集网址（雪球）
-	private $host_two_base = 'https://xueqiu.com/service/screener/screen?category=CN&exchange=sh_sz&areacode=&indcode=&order_by=current&order=asc&page=1&size=30&only_count=0&current=0.15_1031.86&pct=&pettm=-92162.28_27609.46&pelyr=-1586.19_6279.68&pb=0_1163&fmc=41273971_1596104298231&bps.20190331=-6.17_98.76&eps.20190331=-0.82_8.93&psr=-1587.82_13301&mc=115775000_2109925041967&volume_ratio=0_15.79&pct_current_year=-88.22_522.11&tr=0_50.87&pct10=-43.48_239.51&pct5=-27.32_91.67&psf.20190331=-6.17_98.76&ocps.20190331=-30.65_9.59&epsdiluted.20190331=-0.82_8.93&_=1561973852099';
+	private $host_two_base = 'https://xueqiu.com/service/screener/screen?category=CN&exchange=sh_sz&areacode=&indcode=&order_by=current&order=asc&page=1&size=10000&only_count=0&current=0.14_987.9&pct=&fmc=40493376_1528701245096&mc=114125000_2020823477695&bps.20190331=-6.17_98.76&eps.20190331=-0.82_8.93&volume_ratio=0_84.79&amount=0_9012422827.11&pct_current_year=-88.82_500&pct5=-26.41_110.86&pct10=-33.93_185.33&pct20=-76.58_310.81&pct60=-88.82_500&_=1562142373571';
 	// 股票资金流采集网址（东方财富）
 	private $host_money = 'http://nufm.dfcfw.com/EM_Finance2014NumericApplication/JS.aspx?type=ct&sr=-1&p=1&ps=10000&token=894050c76af8597a853f5b408b759f5d&cmd=C._AB&sty=DCFFITA&rt=52065637';
+	
+	// 股票历史资金流采集网址（东方财富）
+	private $host_two_money = 'http://ff.eastmoney.com//EM_CapitalFlowInterface/api/js?type=hff&rtntype=2&js=({data:[(x)]})&cb=var%20aff_data=&check=TMLBMSPROCR&acces_token=1942f5da9b46b069953c873404aad4b5&id=$code$type&_=1562144862102';
     private $type = ['定开债券'=>5,'债券型'=>6,'债券指数'=>7,'分级杠杆'=>8,'固定收益'=>9,'保本型'=>10,'货币型'=>11,'联接基金'=>12,'理财型'=>13,'混合-FOF'=>14,'QDII'=>15,'QDII-指数'=>16,'股票型'=>17,'股票指数'=>18,'其他创新'=>19,'ETF-场内'=>20,'混合型'=>21,'QDII-ETF'=>22];
     public function index(){
         var_dump(112);
@@ -37,54 +40,37 @@ class Market extends Controller{
         set_time_limit(0);
 		$is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
 		if($is_gzr==0){
-			$url3 = $this->host3;
-			$sd = date("Y-m-d",strtotime("-1 day"));
-			$ed = date("Y-m-d",strtotime("-0 day"));
-			$url3 = str_replace('$sd',$sd,$url3);
-			$url3 = str_replace('$ed',$ed,$url3);
-			$infoList = file_get_contents($url3);
-			$year = date("Y");
-			$infoList = substr($infoList,strpos($infoList,'[')+1);
-			$infoList = substr($infoList,0,strpos($infoList, ']'));
-			$arr2 = explode(',',$infoList);
-			$history = new FundHistoryList;
+			$url = $this->host_two_base;
+			$out_put = $this->pq_http_get($url);
+			$res = json_decode($out_put,true);
 			$arr = [];
-			$day_arr = [];
-			$num = count($arr2)/25;
-			for ($x=0; $x<$num; $x++) {
-				$data['year'] = $year;
-				$data['code'] = substr($arr2[$x*25],1);
-				$data['jm'] = $arr2[$x*25+2];
-				$data['name'] = $arr2[$x*25+1];
-				$data['update_date'] = $arr2[$x*25+3];
-				$data['fee'] = ($arr2[$x*25+20]?$arr2[$x*25+20]:0)*10000;
-				$data['unit_value'] = ($arr2[$x*25+4]?$arr2[$x*25+4]:0)*10000;
-				$data['unit_pile_value'] = ($arr2[$x*25+5]?$arr2[$x*25+5]:0)*10000;
-				$data['day_grow'] = ($arr2[$x*25+6]?$arr2[$x*25+6]:0)*10000;
-				$data['week_grow'] = ($arr2[$x*25+7]?$arr2[$x*25+7]:0)*10000;
-				$data['month_grow'] = ($arr2[$x*25+8]?$arr2[$x*25+8]:0)*10000;
-				$data['month_three_grow'] = ($arr2[$x*25+9]?$arr2[$x*25+9]:0)*10000;
-				$data['month_six_grow'] = ($arr2[$x*25+10]?$arr2[$x*25+10]:0)*10000;
-				$data['year_one_grow'] = ($arr2[$x*25+11]?$arr2[$x*25+11]:0)*10000;
-				$data['year_two_grow'] = ($arr2[$x*25+12]?$arr2[$x*25+12]:0)*10000;
-				$data['year_three_grow'] = ($arr2[$x*25+13]?$arr2[$x*25+13]:0)*10000;
-				$data['year_grow'] = ($arr2[$x*25+14]?$arr2[$x*25+14]:0)*10000;
-				$data['create_grow'] = ($arr2[$x*25+15]?$arr2[$x*25+15]:0)*10000;
-				$arr[$x] = $data;
-				$dayArr = $data;
-				$dayArr['zdy'] = ($arr2[$x*25+18]?$arr2[$x*25+18]:0)*10000;// 当前代表 昨日的日增长率
-				// 使用文件缓存
-				Cache::set($data['code'],json_encode($dayArr),7200);
-                $day_arr[$x]['code'] = $data['code'];
-                $day_arr[$x]['name'] = $data['name'];
-                $day_arr[$x]['unit_value'] = $data['unit_value'];
-                $day_arr[$x]['update_date'] = $data['update_date'];
-                $day_arr[$x]['unit_pile_value'] = $data['unit_pile_value'];
-                $day_arr[$x]['day_grow'] = $data['day_grow'];
+			foreach ($res['data']['list'] as $k=>$v){
+				$arr[$k]['date'] = date("Y-m-d");
+				$arr[$k]['code'] = substr($v['symbol'],2);
+				$arr[$k]['type'] = substr($v['symbol'],0,2);
+				$arr[$k]['name'] = $v['name'];
+				$arr[$k]['current'] = $v['current'];
+				$arr[$k]['pct'] = $v['pct'];
+				$arr[$k]['volume_ratio'] = $v['volume_ratio'];
+				$arr[$k]['amount'] = round(($v['amount']/10000),2);
+				$arr[$k]['mc'] = round(($v['mc']/100000000),2);;
+				$arr[$k]['fmc'] = round(($v['fmc']/100000000),2);;
+				$arr[$k]['bps'] = $v['bps'];
+				$arr[$k]['c_bps'] = round((($v['current']-$v['bps'])/$v['bps']),2);
+				$arr[$k]['bps'] = round($v['bps'],2);
+				$arr[$k]['eps'] = round($v['eps'],2);
+				$arr[$k]['pct_current_year'] = $v['pct_current_year'];
+				$arr[$k]['pct5'] = round($v['pct5'],2);
+				$arr[$k]['pct10'] = round($v['pct10'],2);
+				$arr[$k]['pct20'] = round($v['pct20'],2);
+				$arr[$k]['pct60'] = round($v['pct60'],2);
+				$arr[$k]['areacode'] = $v['areacode'];
+				$arr[$k]['indcode'] = $v['indcode'];
+				// var_dump($arr);die;
 			}
-            $day_mode = new FundDayList;
-			$history->saveAll($arr);
-            $day_mode->saveAll($day_arr);
+			$base = new AMarket;
+			$base->saveAll($arr);
+            //$day_mode->saveAll($day_arr);
 		}		
     }
     //  当日资金流数据
@@ -127,52 +113,84 @@ class Market extends Controller{
             $base->saveAll($data);
         }
     }
-
+	//  所有历史资金数据
+	public function historyAllList(){
+        set_time_limit(0);
+		$url = 'http://'.$_SERVER['SERVER_NAME'].'/api/Market/historyList?code=$code&name=$name';
+		$base = new AMarket;
+		$page_num = 10000;
+        $page = 1;
+        if(input('param.page')){
+            $page = input('param.page');
+            $page_num = 500;
+        }
+        $page_sd = $page_num*($page-1)+1;
+        $page_ed = $page_num*$page;
+        $where[] = array('id','>=',$page_sd);
+        $where[] = array('id','<=',$page_ed);
+		$data = $base::where($where)->field('id,code,name')->select()->toArray();
+		foreach($data as $k=>$v){
+			$url_new = str_replace('$code',$v['code'],$url);
+			$url_new = str_replace('$name',$v['name'],$url_new);
+			$res = $this->pq_http_get($url_new);
+		}
+		return 1;
+    }
+	
 	//  历史资金数据
 	public function historyList(){
-        $times = time()-86400;
-		$is_gzr = $this->is_jiaoyi_day($times);
+		if(!input('param.code')){
+            return '没有传入参数';
+        }
+        set_time_limit(0);
+		$is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
 		if($is_gzr==0){
-			Db::query("truncate table sp_fund_base_list");
-			$nowDate = date("Ymd",$times);
-			$url2 = $this->host;
-			$url2 = str_replace('$nowDate',$nowDate,$url2);
-			$list = file_get_contents($url2);		
-			$list = substr($list,strpos($list,'['));
-			$list = substr($list,0,strlen($list)-1);
-			$arr1 = json_decode($list);
-			$year = date("Y");
-			$base = new FundBaseList;
-			$arr = [];
-			foreach ($arr1 as $k=>$v){
-				$temp = json_decode(Cache::get($v[0]),true);
-                $data['buy_status'] = 1;
-				if($temp){
-					$data['update_date'] = $temp['update_date'];
-					$data['fee'] = $temp['fee'];
-					$data['unit_value'] = $temp['unit_value'];
-					$data['unit_pile_value'] = $temp['unit_pile_value'];
-					$data['day_grow'] = $temp['day_grow'];
-					$data['week_grow'] = $temp['week_grow'];
-					$data['month_grow'] = $temp['month_grow'];
-					$data['month_three_grow'] = $temp['month_three_grow'];
-					$data['month_six_grow'] = $temp['month_six_grow'];
-					$data['year_one_grow'] = $temp['year_one_grow'];
-					$data['year_two_grow'] = $temp['year_two_grow'];
-					$data['year_three_grow'] = $temp['year_three_grow'];
-					$data['year_grow'] = $temp['year_grow'];
-					$data['create_grow'] = $temp['create_grow'];
-                    $data['buy_status'] = 0;
-				}
-				$data['year'] = $year;
-				$data['code'] = $v[0];
-				$data['jm'] = $v[1];
-				$data['name'] = $v[2];
-				$data['type'] = $v[3];
-				$data['bm'] = $v[4];
-				$arr[$k] = $data;
+			$url = $this->host_two_money;
+			$type = 1;
+			if(input('param.code')<600000){
+				$type = 2;
 			}
-			$base->saveAll($arr);
+			$url = str_replace('$type',$type,$url);
+			$url = str_replace('$code',input('param.code'),$url);
+			$out_put = $this->pq_http_get($url);
+			
+			$out_put = substr($out_put,22);
+			$out_put = str_replace(')','',$out_put);
+			$out_put = str_replace(']','',$out_put);
+			$out_put = str_replace('}','',$out_put);
+			$arr1 = explode('","',$out_put);
+			$arr1 = array_reverse($arr1); 
+			$arr = [];
+			for($i=0;$i<10;$i++){
+				$str = str_replace('"','',$arr1[$i]);
+				$list[$i] = explode(',',$str);
+				$arr['code'] = input('param.code');
+				$arr['name'] = input('param.name');
+				$arr['d'.($i+1)] = $list[$i][0];
+				$arr['c'.($i+1)] = $list[$i][11]*1;
+				$arr['p'.($i+1)] = $list[$i][12]*1;
+				$arr['f'.(10*($i+1)+0)] = round($list[$i][1]/10000,2);
+				$arr['f'.(10*($i+1)+1)] = $list[$i][2]*1;
+				$arr['f'.(10*($i+1)+2)] = round($list[$i][3]/10000,2);
+				$arr['f'.(10*($i+1)+3)] = $list[$i][4]*1;
+				$arr['f'.(10*($i+1)+4)] = round($list[$i][5]/10000,2);
+				$arr['f'.(10*($i+1)+5)] = $list[$i][6]*1;
+				$arr['f'.(10*($i+1)+6)] = round($list[$i][7]/10000,2);
+				$arr['f'.(10*($i+1)+7)] = $list[$i][8]*1;
+				$arr['f'.(10*($i+1)+8)] = round($list[$i][9]/10000,2);
+				$arr['f'.(10*($i+1)+9)] = $list[$i][10]*1;
+			}
+			$base = new AMarketFund;
+			$where[] = array('code','=',input('param.code'));
+			
+            $data = $base::where($where)->find();
+			
+			if($data){
+				$base->save($arr, ['id' => $data['id']]);
+				return $arr;
+			}
+			$base->save($arr);
+			return $arr;
 		}
     }
 
