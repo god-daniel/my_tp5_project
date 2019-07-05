@@ -11,6 +11,7 @@ use QL\QueryList;
 use think\Controller;
 use app\common\model\AMarket;
 use app\common\model\AMarketFund;
+use app\common\model\AMarketFundTemp;
 use think\Db;
 use think\facade\Cache;
 use \think\View;
@@ -124,6 +125,10 @@ class Market extends Controller{
             $page = input('param.page');
             $page_num = 500;
         }
+		if(input('param.j')){
+			$tem_str = '$code&j='.input('param.j');
+            $url = str_replace('$code',$tem_str,$url); //增加j参数  j代表采集的天数
+        }
         $page_sd = $page_num*($page-1)+1;
         $page_ed = $page_num*$page;
         $where[] = array('id','>=',$page_sd);
@@ -161,7 +166,13 @@ class Market extends Controller{
 			$arr1 = explode('","',$out_put);
 			$arr1 = array_reverse($arr1); 
 			$arr = [];
-			for($i=0;$i<10;$i++){
+			$j = 10;
+			$base = new AMarketFund;  // 默认基准数据
+			if(input('param.j')){
+				$j = input('param.j');  // 存在值转为计算数据
+				$base = new AMarketFundTemp;
+			}
+			for($i=0;$i<$j;$i++){
 				$str = str_replace('"','',$arr1[$i]);
 				$list[$i] = explode(',',$str);
 				$arr['code'] = input('param.code');
@@ -180,9 +191,8 @@ class Market extends Controller{
 				$arr['f'.(10*($i+1)+8)] = round($list[$i][9]/10000,2);
 				$arr['f'.(10*($i+1)+9)] = $list[$i][10]*1;
 			}
-			$base = new AMarketFund;
-			$where[] = array('code','=',input('param.code'));
 			
+			$where[] = array('code','=',input('param.code'));
             $data = $base::where($where)->find();
 			
 			if($data){
