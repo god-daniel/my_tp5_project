@@ -123,7 +123,7 @@ class Market extends Controller{
         $page = 1;
         if(input('param.page')){
             $page = input('param.page');
-            $page_num = 500;
+            $page_num = 300;
         }
 		if(input('param.j')){
 			$tem_str = '$code&j='.input('param.j');
