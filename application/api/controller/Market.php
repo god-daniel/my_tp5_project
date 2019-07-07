@@ -221,7 +221,147 @@ class Market extends Controller{
 		}
     }
 
+	//  计算连绿次数后红的概率
+	public function cutNumPr(){
+        set_time_limit(0);
+		$base = new AMarketFundTemp;
+		$where[] = array('d1','>',0);
+		$start = 20;
+		$num = 3;
+		
+        if(input('param.num')>2){
+			$num = input('param.num');
+        }
+		if(input('param.start')>$num){
+			$start = input('param.start');
+        }
+		$where[] = array('p'.$start,'>',0);
+		for($i=$start-$num;$i<$start;$i++){
+			$where[] = array('p'.$i,'<=',0);
+		}
+		$get = $start-$num-1;
+		// var_dump($where);die;
+		$data = $base::where($where)->field('id,code,name,p'.$get.',c'.$get)->select()->toArray();
+		$dy = 0;$zs = count($data);
+		foreach($data as $k=>$v){
+			echo 'code:'.$v['code'].' name:'.$v['name'].' p'.$get.':'.$v['p'.$get].' | '.' c'.$get.':'.$v['c'.$get];
+			echo '</br>';
+			if($v['p'.$get]>=0){
+				$dy +=1;
+			}
+		}
+		if($zs>0){
+			echo '开始:'.$start.'连绿天数:'.$num.'总数:'.$zs.' 红数:'.$dy.' 概率:'.round(($dy/$zs),2);
+		}else{
+			echo '开始:'.$start.'连绿天数:'.$num.'总数:'.$zs.' 红数:'.$dy;
+		}
+		echo '</br>';
+		//return 1;
+    }
+	
+	//  计算连绿过程中降幅比例后红概率  降幅/跌停幅度
+	public function cutNumPTr(){
+        set_time_limit(0);
+		$base = new AMarketFundTemp;
+		$where[] = array('d1','>',0);
+		$start = 20;
+		$num = 3;
+		$pr = 0.1;
+		
+        if(input('param.num')>2){
+			$num = input('param.num');
+        }
+		if(input('param.pr')>0.1){
+			$pr = input('param.pr');
+        }
+		if(input('param.start')>$num){
+			$start = input('param.start');
+        }
+		$where[] = array('p'.$start,'>',0);
+		for($i=$start-$num;$i<$start;$i++){
+			$where[] = array('p'.$i,'<=',0);
+		}
+		$get = $start-$num;
+		$getP = $start-$num+1;
+		$getN = $start-$num-1;
+		// var_dump($where);die;
+		$data = $base::where($where)->field('id,code,name,p'.$get.',c'.$get.',p'.$getP.',p'.$getN)->select()->toArray();
+		$dy = 0;$zs = 0;
+		$c = 10;
+		foreach($data as $k=>$v){
+			if($v['p'.$getN]>=0){
+				$dy +=1;
+			}
+			if(strpos($v['name'],'ST')){
+				$c = 5;
+			}
+			$tem = abs(($v['p'.$get]/$c));
+			if($tem<=$pr){
+				$zs+=1;
+			}
+			
+			echo 'code:'.$v['code'].' name:'.$v['name'].' 当前p'.$get.':'.$v['p'.$get].' | '.' 当前c'.$get.':'.$v['c'.$get].' | '.' 前一天p'.$getP.':'.$v['p'.$getP].' | '.' 后一天p'.$getN.':'.$v['p'.$getN].' | 降幅比例: '.$tem;
+			echo '</br>';
+		}
+		if($zs>0){
+			echo '开始:'.$start.'连绿天数:'.$num.'比例:'.$$pr.'总数:'.$zs.' 红数:'.$dy.' 概率:'.round(($dy/$zs),2);
+		}else{
+			echo '开始:'.$start.'连绿天数:'.$num.'比例:'.$$pr.'总数:'.$zs.' 红数:'.$dy;
+		}
+		echo '</br>';
+		//return 1;
+    }	
+	//  计算连绿次数和降幅比例
+	public function cutNum(){
+        set_time_limit(0);
+		$base = new AMarketFundTemp;
+		$where[] = array('d1','>',0);
+		$page_num = 10000;
+        $page = 1;
+        if(input('param.page')){
+            $page = input('param.page');
+            $page_num = 500;
+        }		
+		
+		$data = $base::where($where)->field('id,code,name,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15,p16,p17,p18,p19,p20,now_pr,pre_pr,green_num')->select()->toArray();
+		$start = 1;
+		$c = 10;
 
+		if(input('param.start')>$num){
+			$start = input('param.start');
+        }
+		foreach($data as $k=>$v){
+			if(strpos($v['name'],'ST')){
+				$c = 5;
+			}
+			$num = 0;
+			$pre_pr = 0;
+			$now_pr = 0;
+			
+			if($v['p'.$start]<=0){
+				
+				for($i=$start;$i<21;$i++){
+					if($v['p'.$i]<=0){
+						$num += 1;
+					}else{
+						$i = 21;
+					}
+					if($i==20&&$v['p20']<=0){
+						$num = 0;
+					}
+				}
+				$now_pr = abs(($v['p'.$start]/$c));
+				$pre_pr = abs(($v['p'.($start+1)]/$c));
+				
+			}
+			$data[$k]['now_pr'] = $now_pr;			
+			$data[$k]['pre_pr'] = $pre_pr;
+			$data[$k]['green_num'] = $num;
+		}
+		$base->saveAll($data);
+		//return 1;
+    }		
+	
 	//  是否交易日
 	public function is_jiaoyi_day($times=''){
 		$date = date("Ymd",time());
