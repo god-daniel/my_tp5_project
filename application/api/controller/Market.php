@@ -95,23 +95,6 @@ class Market extends Controller{
 
         }
     }
-		//  循环请求所有历史资金数据
-	public function qtAllList(){
-		set_time_limit(0);
-		$j = 20;
-		$url = 'http://'.$_SERVER['SERVER_NAME'].'/api/Market/historyAllList?page=';
-		if(input('param.j')){
-			$j= input('param.j');
-			$url = 'http://'.$_SERVER['SERVER_NAME'].'/api/Market/historyAllList?j='.$j.'&page=';
-        }
-		for($i=1;$i<20;$i++){
-			$url .= $i;
-			$this->pq_http_get($url);
-			echo $i;
-			echo '</br>';
-		}
-		return '运行完毕';
-	}
 	
 	//  所有历史资金数据
 	public function historyAllList(){
