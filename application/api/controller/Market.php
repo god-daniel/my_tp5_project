@@ -69,10 +69,15 @@ class Market extends Controller{
 				$arr[$k]['areacode'] = $v['areacode'];
 				$arr[$k]['indcode'] = $v['indcode'];
 				$arr[$k]['now_pr'] = 0;
+				$ints = intval($arr[$k]['code']);
+				if($ints>300000&&$ints<400000){
+					$arr[$k]['buy_type'] = 2;
+				}
 				if($arr[$k]['pct']<=0){
 					$c = 10;
 					if(strpos($v['name'],'ST')){
 						$c = 5;
+						$arr[$k]['buy_type'] = 1;
 					}
 					$arr[$k]['now_pr'] = abs(($arr[$k]['pct']/$c));
 				}
@@ -294,9 +299,15 @@ class Market extends Controller{
 			$start = input('param.start');
         }
 		foreach($data as $k=>$v){
+			$ints = intval($v['code']);
+			$data[$k]['buy_type'] = 0;
+			if($ints>300000&&$ints<400000){
+				$data[$k]['buy_type'] = 2;
+			}
 			$c = 10;
 			if(strpos($v['name'],'ST')){
 				$c = 5;
+				$data[$k]['buy_type'] = 1;
 			}
 			$num = 0;
 			$pre_pr = 0;
@@ -347,9 +358,15 @@ class Market extends Controller{
 			$start = input('param.start');
         }
 		foreach($data as $k=>$v){
+			$ints = intval($v['code']);
+			$data[$k]['buy_type'] = 0;
+			if($ints>300000&&$ints<400000){
+				$data[$k]['buy_type'] = 2;
+			}
 			$c = 10;
 			if(strpos($v['name'],'ST')){
 				$c = 5;
+				$data[$k]['buy_type'] = 1;
 			}
 			$num = 0;
 			$pre_pr = 0;
