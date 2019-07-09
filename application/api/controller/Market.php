@@ -97,13 +97,14 @@ class Market extends Controller{
     }
 		//  循环请求所有历史资金数据
 	public function qtAllList(){
+		set_time_limit(0);
 		$j = 20;
 		$url = 'http://'.$_SERVER['SERVER_NAME'].'/api/Market/historyAllList?page=';
 		if(input('param.j')){
 			$j= input('param.j');
 			$url = 'http://'.$_SERVER['SERVER_NAME'].'/api/Market/historyAllList?j='.$j.'&page=';
         }
-		for($i=1;$i<45;$i++){
+		for($i=1;$i<20;$i++){
 			$url .= $i;
 			$this->pq_http_get($url);
 			echo $i;
@@ -280,7 +281,6 @@ class Market extends Controller{
 			if($tem<=$pr){
 				$zs+=1;
 			}
-			
 			echo 'code:'.$v['code'].' name:'.$v['name'].' 当前p'.$get.':'.$v['p'.$get].' | '.' 当前c'.$get.':'.$v['c'.$get].' | '.' 前一天p'.$getP.':'.$v['p'.$getP].' | '.' 后一天p'.$getN.':'.$v['p'.$getN].' | 降幅比例: '.$tem;
 			echo '</br>';
 		}
@@ -304,7 +304,7 @@ class Market extends Controller{
             $page_num = 500;
         }		
 		
-		$data = $base::where($where)->field('id,code,name,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15,p16,p17,p18,p19,p20,now_pr,pre_pr,green_num')->select()->toArray();
+		$data = $base::where($where)->field('id,code,name,p1,p2,p3,p4,p5,p6,p7,p8,p9,now_pr,pre_pr,pre_pr2,green_num')->select()->toArray();
 		$start = 1;
 		$c = 10;
 
@@ -318,6 +318,7 @@ class Market extends Controller{
 			$num = 0;
 			$pre_pr = 0;
 			$now_pr = 0;
+			$pre_pr2 = 0;
 			
 			if($v['p'.$start]<=0){
 				
@@ -333,10 +334,12 @@ class Market extends Controller{
 				}
 				$now_pr = abs(($v['p'.$start]/$c));
 				$pre_pr = abs(($v['p'.($start+1)]/$c));
+				$pre_pr2 = abs(($v['p'.($start+2)]/$c));
 				
 			}
 			$data[$k]['now_pr'] = $now_pr;			
 			$data[$k]['pre_pr'] = $pre_pr;
+			$data[$k]['pre_pr2'] = $pre_pr2;
 			$data[$k]['green_num'] = $num;
 		}
 		$base->saveAll($data);
@@ -368,6 +371,7 @@ class Market extends Controller{
 			$num = 0;
 			$pre_pr = 0;
 			$now_pr = 0;
+			$pre_pr2 = 0;
 			
 			if($v['p'.$start]<=0){
 				
@@ -383,10 +387,12 @@ class Market extends Controller{
 				}
 				$now_pr = abs(($v['p'.$start]/$c));
 				$pre_pr = abs(($v['p'.($start+1)]/$c));
+				$pre_pr2 = abs(($v['p'.($start+2)]/$c));
 				
 			}
 			$data[$k]['now_pr'] = $now_pr;			
 			$data[$k]['pre_pr'] = $pre_pr;
+			$data[$k]['pre_pr2'] = $pre_pr2;
 			$data[$k]['green_num'] = $num;
 		}
 		$base->saveAll($data);
@@ -398,9 +404,8 @@ class Market extends Controller{
 		$hbase = new AMarketFund;
 		if(input('param.type')==1){
 			$hbase = new AMarketFundTemp;
-		}else{
-			$nbase = new AMarket;
 		}
+		$nbase = new AMarket;
 		$where[] = array('d1','>',0);	
 		
 		$data = $hbase::where($where)->field('code,name,now_pr,pre_pr,green_num')->select()->toArray();
