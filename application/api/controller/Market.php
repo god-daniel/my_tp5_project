@@ -80,38 +80,7 @@ class Market extends Controller{
         $times = time()-86400;
         $is_gzr = $this->is_jiaoyi_day($times);
         if($is_gzr==0){
-            $base = new FundBase;
-            if(input('param.code')){
-                $where[] = array('code','=',input('param.code'));
-            }
-            $where[] = array('buy_status','in','0,1,2');
-            $data = $base::where($where)->order('code asc')->select()->toArray();
-            foreach ($data as $k=>$v){
-                $cahe = Cache::get($v['code']);
-                $data[$k]['create_time'] = 1551577703;  //创建时间
-                $data[$k]['update_time'] = time();  //更新时间
-                $data[$k]['buy_status'] = 1;
-                $data[$k]['buy_not_num'] += 1;
-                if($cahe){
-                    $temp = json_decode($cahe,true);
-                    $data[$k]['buy_not_num'] -= 1;
-                    $data[$k]['fee'] = $temp['fee'];
-                    $data[$k]['unit_value'] = $temp['unit_value'];
-                    $data[$k]['unit_pile_value'] = $temp['unit_pile_value'];
-                    $data[$k]['day_grow'] = $temp['day_grow'];
-                    $data[$k]['week_grow'] = $temp['week_grow'];
-                    $data[$k]['month_grow'] = $temp['month_grow'];
-                    $data[$k]['month_three_grow'] = $temp['month_three_grow'];
-                    $data[$k]['month_six_grow'] = $temp['month_six_grow'];
-                    $data[$k]['year_one_grow'] = $temp['year_one_grow'];
-                    $data[$k]['year_two_grow'] = $temp['year_two_grow'];
-                    $data[$k]['year_three_grow'] = $temp['year_three_grow'];
-                    $data[$k]['year_grow'] = $temp['year_grow'];
-                    $data[$k]['create_grow'] = $temp['create_grow'];
-                    $data[$k]['buy_status'] = 0;
-                }
-            }
-            $base->saveAll($data);
+
         }
     }
 		//  循环请求所有历史资金数据
@@ -359,6 +328,36 @@ class Market extends Controller{
 			$data[$k]['green_num'] = $num;
 		}
 		$base->saveAll($data);
+		//return 1;
+    }		
+
+	//  保存到基准表连绿次数和降幅比例
+	public function saveNum(){
+        set_time_limit(0);
+		$hbase = new AMarketFundTemp;
+		$nbase = new AMarket;
+		$where[] = array('d1','>',0);
+		$page_num = 10000;
+        $page = 1;
+        if(input('param.page')){
+            $page = input('param.page');
+            $page_num = 500;
+        }		
+		
+		$data = $hbase::where($where)->field('code,name,now_pr,pre_pr,green_num')->select()->toArray();
+		$start = 1;
+		$c = 10;
+
+		if(input('param.start')>$num){
+			$start = input('param.start');
+        }
+		$arr = [];
+		foreach($data as $k=>$v){
+			$arr['green_num'] = $v['green_num'];
+			$arr['pre_pr'] = $v['now_pr'];
+			$arr['pre_pr2'] = $v['pre_pr'];
+			$nbase->where('code'=$v['code'])->update($arr)
+		}
 		//return 1;
     }		
 	
