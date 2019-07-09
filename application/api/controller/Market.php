@@ -356,7 +356,7 @@ class Market extends Controller{
 			$arr['green_num'] = $v['green_num'];
 			$arr['pre_pr'] = $v['now_pr'];
 			$arr['pre_pr2'] = $v['pre_pr'];
-			$nbase->where('code'=$v['code'])->update($arr)
+			$nbase->where('code'=$v['code'])->update($arr);
 		}
 		//return 1;
     }		
