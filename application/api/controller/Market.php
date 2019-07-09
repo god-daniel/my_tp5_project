@@ -45,6 +45,7 @@ class Market extends Controller{
 			$out_put = $this->pq_http_get($url);
 			$res = json_decode($out_put,true);
 			$arr = [];
+			$base = new AMarket;
 			foreach ($res['data']['list'] as $k=>$v){
 				$arr[$k]['date'] = date("Y-m-d");
 				$arr[$k]['code'] = substr($v['symbol'],2);
@@ -67,10 +68,21 @@ class Market extends Controller{
 				$arr[$k]['pct60'] = round($v['pct60'],2);
 				$arr[$k]['areacode'] = $v['areacode'];
 				$arr[$k]['indcode'] = $v['indcode'];
+				$arr[$k]['now_pr'] = 0;
+				if($arr[$k]['pct']<=0){
+					$c = 10;
+					if(strpos($v['name'],'ST')){
+						$c = 5;
+					}
+					$arr[$k]['now_pr'] = abs(($arr[$k]['pct']/$c));
+				}
+				if(input('param.type')==1){
+					$base->save($arr[$k]);  								//添加操作
+				}else{
+					$base->where('code',$arr[$k]['code'])->update($arr[$k]);  //更新操作
+				}
 				// var_dump($arr);die;
 			}
-			$base = new AMarket;
-			$base->saveAll($arr);
             //$day_mode->saveAll($day_arr);
 		}		
     }
@@ -280,8 +292,58 @@ class Market extends Controller{
 		echo '</br>';
 		//return 1;
     }	
-	//  计算连绿次数和降幅比例
+	//  AMarketFund计算连绿次数和降幅比例
 	public function cutNum(){
+        set_time_limit(0);
+		$base = new AMarketFund;
+		$where[] = array('d1','>',0);
+		$page_num = 10000;
+        $page = 1;
+        if(input('param.page')){
+            $page = input('param.page');
+            $page_num = 500;
+        }		
+		
+		$data = $base::where($where)->field('id,code,name,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15,p16,p17,p18,p19,p20,now_pr,pre_pr,green_num')->select()->toArray();
+		$start = 1;
+		$c = 10;
+
+		if(input('param.start')>$num){
+			$start = input('param.start');
+        }
+		foreach($data as $k=>$v){
+			if(strpos($v['name'],'ST')){
+				$c = 5;
+			}
+			$num = 0;
+			$pre_pr = 0;
+			$now_pr = 0;
+			
+			if($v['p'.$start]<=0){
+				
+				for($i=$start;$i<11;$i++){
+					if($v['p'.$i]<=0){
+						$num += 1;
+					}else{
+						$i = 11;
+					}
+					if($i==10&&$v['p10']<=0){
+						$num = 0;
+					}
+				}
+				$now_pr = abs(($v['p'.$start]/$c));
+				$pre_pr = abs(($v['p'.($start+1)]/$c));
+				
+			}
+			$data[$k]['now_pr'] = $now_pr;			
+			$data[$k]['pre_pr'] = $pre_pr;
+			$data[$k]['green_num'] = $num;
+		}
+		$base->saveAll($data);
+		//return 1;
+    }		
+	//  AMarketFundTemp计算连绿次数和降幅比例
+	public function cutNumTemp(){
         set_time_limit(0);
 		$base = new AMarketFundTemp;
 		$where[] = array('d1','>',0);
@@ -330,33 +392,24 @@ class Market extends Controller{
 		$base->saveAll($data);
 		//return 1;
     }		
-
 	//  保存到基准表连绿次数和降幅比例
 	public function saveNum(){
         set_time_limit(0);
-		$hbase = new AMarketFundTemp;
-		$nbase = new AMarket;
-		$where[] = array('d1','>',0);
-		$page_num = 10000;
-        $page = 1;
-        if(input('param.page')){
-            $page = input('param.page');
-            $page_num = 500;
-        }		
+		$hbase = new AMarketFund;
+		if(input('param.type')==1){
+			$hbase = new AMarketFundTemp;
+		}else{
+			$nbase = new AMarket;
+		}
+		$where[] = array('d1','>',0);	
 		
 		$data = $hbase::where($where)->field('code,name,now_pr,pre_pr,green_num')->select()->toArray();
-		$start = 1;
-		$c = 10;
-
-		if(input('param.start')>$num){
-			$start = input('param.start');
-        }
 		$arr = [];
 		foreach($data as $k=>$v){
 			$arr['green_num'] = $v['green_num'];
 			$arr['pre_pr'] = $v['now_pr'];
 			$arr['pre_pr2'] = $v['pre_pr'];
-			$nbase->where('code'=$v['code'])->update($arr);
+			$nbase->where('code',$v['code'])->update($arr);
 		}
 		//return 1;
     }		
