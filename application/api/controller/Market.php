@@ -55,6 +55,7 @@ class Market extends Controller{
 				$arr[$k]['current'] = $v['current'];
 				$arr[$k]['pct'] = $v['pct'];
 				$arr[$k]['volume_ratio'] = $v['volume_ratio'];
+				$arr[$k]['turnover_rate'] = $v['tr'];
 				$arr[$k]['amount'] = round(($v['amount']/10000),2);
 				$arr[$k]['mc'] = round(($v['mc']/100000000),2);;
 				$arr[$k]['fmc'] = round(($v['fmc']/100000000),2);;
