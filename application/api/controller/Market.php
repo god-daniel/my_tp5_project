@@ -89,21 +89,27 @@ class Market extends Controller{
 				// var_dump($arr);die;
 			}
             //$day_mode->saveAll($day_arr);
-		}		
+		}
+		return 1;
     }
     //  当日资金流数据
     public function dayList(){
         set_time_limit(0);
         $times = time()-86400;
-        $is_gzr = $this->is_jiaoyi_day($times);
-        if($is_gzr==0){
-
+        $is_gzr = $this->is_jiaoyi_day();
+        if($is_gzr!=0){
+			return 0;
         }
+		return 1;
     }
 	
 	//  所有历史资金数据
 	public function historyAllList(){
         set_time_limit(0);
+		$is_gzr = $this->is_jiaoyi_day();
+        if($is_gzr!=0){
+			return 0;   // 非工作日直接返回
+        }
 		$url = 'http://'.$_SERVER['SERVER_NAME'].'/api/Market/historyList?code=$code&name=$name';
 		$base = new AMarket;
 		$page_num = 10000;
@@ -283,6 +289,10 @@ class Market extends Controller{
 	//  AMarketFund计算连绿次数和降幅比例
 	public function cutNum(){
         set_time_limit(0);
+		$is_gzr = $this->is_jiaoyi_day();
+        if($is_gzr!=0){
+			return 0;   // 非工作日直接返回
+        }
 		$base = new AMarketFund;
 		$where[] = array('d1','>',0);
 		$page_num = 10000;
@@ -401,6 +411,10 @@ class Market extends Controller{
 	//  保存到基准表连绿次数和降幅比例
 	public function saveNum(){
         set_time_limit(0);
+		$is_gzr = $this->is_jiaoyi_day();
+        if($is_gzr!=0){
+			return 0;   // 非工作日直接返回
+        }
 		$hbase = new AMarketFund;
 		if(input('param.type')==1){
 			$hbase = new AMarketFundTemp;
