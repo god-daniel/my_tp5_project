@@ -25,7 +25,7 @@ class Market extends Controller{
 	private $host_base = 'http://21.push2.eastmoney.com/api/qt/clist/get?cb=jQuery1124014069351677765463_1561970756781&pn=1&pz=10000&po=0&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f2&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2&fields=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f13,f14,f15,f16,f17,f18,f20,f21,f23,f24,f25,f22,f11,f62,f128,f136,f115,f152&_=1561970756952';
 	
 	// 基础股票采集网址（雪球）
-	private $host_two_base = 'https://xueqiu.com/service/screener/screen?category=CN&exchange=sh_sz&areacode=&indcode=&order_by=current&order=asc&page=1&size=10000&only_count=0&current=0.14_987.9&pct=&fmc=40493376_1528701245096&mc=114125000_2020823477695&bps.20190331=-6.17_98.76&eps.20190331=-0.82_8.93&volume_ratio=0_84.79&amount=0_9012422827.11&pct_current_year=-88.82_500&pct5=-26.41_110.86&pct10=-33.93_185.33&pct20=-76.58_310.81&pct60=-88.82_500&_=1562142373571';
+	private $host_two_base = 'https://xueqiu.com/service/screener/screen?category=CN&exchange=sh_sz&areacode=&indcode=&order_by=current&order=asc&page=1&size=10000&only_count=0&current=0.14_987.9&pct=&tr=0_70.33&fmc=40493376_1528701245096&mc=114125000_2020823477695&bps.20190331=-6.17_98.76&eps.20190331=-0.82_8.93&volume_ratio=0_84.79&amount=0_9012422827.11&pct_current_year=-88.82_500&pct5=-26.41_110.86&pct10=-33.93_185.33&pct20=-76.58_310.81&pct60=-88.82_500&_=1562142373571';
 	// 股票资金流采集网址（东方财富）
 	private $host_money = 'http://nufm.dfcfw.com/EM_Finance2014NumericApplication/JS.aspx?type=ct&sr=-1&p=1&ps=10000&token=894050c76af8597a853f5b408b759f5d&cmd=C._AB&sty=DCFFITA&rt=52065637';
 	
@@ -47,6 +47,7 @@ class Market extends Controller{
 			$arr = [];
 			$base = new AMarket;
 			foreach ($res['data']['list'] as $k=>$v){
+				//turnover_rate
 				$arr[$k]['date'] = date("Y-m-d");
 				$arr[$k]['code'] = substr($v['symbol'],2);
 				$arr[$k]['type'] = substr($v['symbol'],0,2);
