@@ -198,96 +198,7 @@ class Market extends Controller{
 			return $arr;
 		}
     }
-
-	//  计算连绿次数后红的概率
-	public function cutNumPr(){
-        set_time_limit(0);
-		$base = new AMarketFundTemp;
-		$where[] = array('d1','>',0);
-		$start = 20;
-		$num = 3;
-		
-        if(input('param.num')>2){
-			$num = input('param.num');
-        }
-		if(input('param.start')>$num){
-			$start = input('param.start');
-        }
-		$where[] = array('p'.$start,'>',0);
-		for($i=$start-$num;$i<$start;$i++){
-			$where[] = array('p'.$i,'<=',0);
-		}
-		$get = $start-$num-1;
-		// var_dump($where);die;
-		$data = $base::where($where)->field('id,code,name,p'.$get.',c'.$get)->select()->toArray();
-		$dy = 0;$zs = count($data);
-		foreach($data as $k=>$v){
-			echo 'code:'.$v['code'].' name:'.$v['name'].' p'.$get.':'.$v['p'.$get].' | '.' c'.$get.':'.$v['c'.$get];
-			echo '</br>';
-			if($v['p'.$get]>=0){
-				$dy +=1;
-			}
-		}
-		if($zs>0){
-			echo '开始:'.$start.'连绿天数:'.$num.'总数:'.$zs.' 红数:'.$dy.' 概率:'.round(($dy/$zs),2);
-		}else{
-			echo '开始:'.$start.'连绿天数:'.$num.'总数:'.$zs.' 红数:'.$dy;
-		}
-		echo '</br>';
-		//return 1;
-    }
 	
-	//  计算连绿过程中降幅比例后红概率  降幅/跌停幅度
-	public function cutNumPTr(){
-        set_time_limit(0);
-		$base = new AMarketFundTemp;
-		$where[] = array('d1','>',0);
-		$start = 20;
-		$num = 3;
-		$pr = 0.1;
-		
-        if(input('param.num')>2){
-			$num = input('param.num');
-        }
-		if(input('param.pr')>0.1){
-			$pr = input('param.pr');
-        }
-		if(input('param.start')>$num){
-			$start = input('param.start');
-        }
-		$where[] = array('p'.$start,'>',0);
-		for($i=$start-$num;$i<$start;$i++){
-			$where[] = array('p'.$i,'<=',0);
-		}
-		$get = $start-$num;
-		$getP = $start-$num+1;
-		$getN = $start-$num-1;
-		// var_dump($where);die;
-		$data = $base::where($where)->field('id,code,name,p'.$get.',c'.$get.',p'.$getP.',p'.$getN)->select()->toArray();
-		$dy = 0;$zs = 0;
-		$c = 10;
-		foreach($data as $k=>$v){
-			if($v['p'.$getN]>=0){
-				$dy +=1;
-			}
-			if(strpos($v['name'],'ST')){
-				$c = 5;
-			}
-			$tem = abs(($v['p'.$get]/$c));
-			if($tem<=$pr){
-				$zs+=1;
-			}
-			echo 'code:'.$v['code'].' name:'.$v['name'].' 当前p'.$get.':'.$v['p'.$get].' | '.' 当前c'.$get.':'.$v['c'.$get].' | '.' 前一天p'.$getP.':'.$v['p'.$getP].' | '.' 后一天p'.$getN.':'.$v['p'.$getN].' | 降幅比例: '.$tem;
-			echo '</br>';
-		}
-		if($zs>0){
-			echo '开始:'.$start.'连绿天数:'.$num.'比例:'.$$pr.'总数:'.$zs.' 红数:'.$dy.' 概率:'.round(($dy/$zs),2);
-		}else{
-			echo '开始:'.$start.'连绿天数:'.$num.'比例:'.$$pr.'总数:'.$zs.' 红数:'.$dy;
-		}
-		echo '</br>';
-		//return 1;
-    }	
 	//  AMarketFund计算连绿次数和降幅比例
 	public function cutNum(){
         set_time_limit(0);
@@ -333,9 +244,6 @@ class Market extends Controller{
 						$num += 1;
 					}else{
 						$i = 11;
-					}
-					if($i==10&&$v['p10']<=0){
-						$num = 0;
 					}
 				}
 				$now_pr = abs(($v['p'.$start]/$c));
@@ -393,9 +301,6 @@ class Market extends Controller{
 					}else{
 						$i = 21;
 					}
-					if($i==20&&$v['p20']<=0){
-						$num = 0;
-					}
 				}
 				$now_pr = abs(($v['p'.$start]/$c));
 				$pre_pr = abs(($v['p'.($start+1)]/$c));
@@ -434,7 +339,24 @@ class Market extends Controller{
 		}
 		//return 1;
     }		
-	
+	//  保存到sp_a_my_market_h_temp
+	public function saveHtemp(){
+        set_time_limit(0);
+		$is_gzr = $this->is_jiaoyi_day();
+        if($is_gzr!=0){
+			return 0;   // 非工作日直接返回
+        }
+		$where[] = array('f.buy_type','=','0');
+		$where = $this->cut_one();
+		$data = Db::table('sp_a_market_fund')
+			->alias('f')
+			->field('f.*,m.amount,m.fmc')
+			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
+			->where($where)
+			->select();
+		
+		//return 1;
+    }	
 	//  是否交易日
 	public function is_jiaoyi_day($times=''){
 		$date = date("Ymd",time());
@@ -484,6 +406,17 @@ class Market extends Controller{
         $out_put = curl_exec($ch);
         curl_close($ch);
         return $out_put;
+    }
+	
+	//  算法1
+    public function cut_one(){
+		$where[] = array('f.green_num','>','6');
+		$where[] = array('f.c1','>','5');
+		return $where;
+    }
+	//  算法2
+    public function cut_two($data){
+        
     }
 
 }
