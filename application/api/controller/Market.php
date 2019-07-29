@@ -25,7 +25,7 @@ class Market extends Controller{
 	private $host_base = 'http://21.push2.eastmoney.com/api/qt/clist/get?cb=jQuery1124014069351677765463_1561970756781&pn=1&pz=10000&po=0&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f2&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2&fields=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f13,f14,f15,f16,f17,f18,f20,f21,f23,f24,f25,f22,f11,f62,f128,f136,f115,f152&_=1561970756952';
 	
 	// 基础股票采集网址（雪球）
-	private $host_two_base = 'https://xueqiu.com/service/screener/screen?category=CN&exchange=sh_sz&areacode=&indcode=&order_by=current&order=asc&page=1&size=10000&only_count=0&current=0.14_987.9&pct=&tr=0_70.33&fmc=40493376_1528701245096&mc=114125000_2020823477695&bps.20190331=-6.17_98.76&eps.20190331=-0.82_8.93&volume_ratio=0_84.79&amount=0_9012422827.11&pct_current_year=-88.82_500&pct5=-26.41_110.86&pct10=-33.93_185.33&pct20=-76.58_310.81&pct60=-88.82_500&_=1562142373571';
+	private $host_two_base = 'https://xueqiu.com/service/screener/screen?category=CN&exchange=sh_sz&areacode=&indcode=&order_by=current&order=asc&page=1&size=10000&only_count=0&current=0.14_1000&pct=&tr=0_70.33&fmc=40493376_1528701245096&mc=114125000_2020823477695&bps.20190331=-6.17_98.76&eps.20190331=-0.82_8.93&volume_ratio=0_84.79&amount=0_9012422827.11&pct_current_year=-88.82_500&_=1562142373571';
 	// 股票资金流采集网址（东方财富）
 	private $host_money = 'http://nufm.dfcfw.com/EM_Finance2014NumericApplication/JS.aspx?type=ct&sr=-1&p=1&ps=10000&token=894050c76af8597a853f5b408b759f5d&cmd=C._AB&sty=DCFFITA&rt=52065637';
 	
@@ -64,10 +64,10 @@ class Market extends Controller{
 				$arr[$k]['bps'] = round($v['bps'],2);
 				$arr[$k]['eps'] = round($v['eps'],2);
 				$arr[$k]['pct_current_year'] = $v['pct_current_year'];
-				$arr[$k]['pct5'] = round($v['pct5'],2);
-				$arr[$k]['pct10'] = round($v['pct10'],2);
-				$arr[$k]['pct20'] = round($v['pct20'],2);
-				$arr[$k]['pct60'] = round($v['pct60'],2);
+				//$arr[$k]['pct5'] = round($v['pct5'],2);
+				//$arr[$k]['pct10'] = round($v['pct10'],2);
+				//$arr[$k]['pct20'] = round($v['pct20'],2);
+				//$arr[$k]['pct60'] = round($v['pct60'],2);
 				$arr[$k]['areacode'] = $v['areacode'];
 				$arr[$k]['indcode'] = $v['indcode'];
 				$arr[$k]['now_pr'] = 0;
@@ -340,20 +340,154 @@ class Market extends Controller{
 		//return 1;
     }		
 	//  保存到sp_a_my_market_h_temp
-	public function saveHtemp(){
+	public function addHtemp(){
         set_time_limit(0);
 		$is_gzr = $this->is_jiaoyi_day();
         if($is_gzr!=0){
 			return 0;   // 非工作日直接返回
         }
 		$where[] = array('f.buy_type','=','0');
+		$date = date("Y-m-d");
+		$where[] = array('f.d1','=',$date);
 		$where = $this->cut_one();
 		$data = Db::table('sp_a_market_fund')
 			->alias('f')
-			->field('f.*,m.amount,m.fmc')
+			->field('f.*,m.amount,m.fmc,m.indcode')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
+		$arr = [];
+		foreach($data as $k=>$v){
+			if($v['c1']<=0){
+				break;
+			}			
+			$arr[$k]['code'] = $v['code'];
+			$arr[$k]['name'] = $v['name'];
+			$arr[$k]['indcode'] = $v['indcode'];
+			$arr[$k]['cut_type'] = 1;
+			$arr[$k]['green_num'] = $v['green_num'];
+			$arr[$k]['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
+			$arr[$k]['amount_pr'] = $v['amount']/10000/$v['fmc']*100;
+			$arr[$k]['buy_pct'] = $v['c1'];
+			$arr[$k]['xz_pct'] = $v['c1'];
+			$arr[$k]['buy_num'] = 1;
+			$arr[$k]['low_pr_sum'] = $this->get_green($v);
+			$arr[$k]['buy_date'] = $date;
+		}
+		Db::table('sp_a_my_market_h_temp')->data($arr)->insertAll();
+		//return 1;
+    }
+		//  更新sp_a_my_market_h_temp
+	public function updateHtemp(){
+        set_time_limit(0);
+		$is_gzr = $this->is_jiaoyi_day();
+        if($is_gzr!=0){
+			return 0;   // 非工作日直接返回
+        }
+		$date = date("Y-m-d");
+		$where[] = array('f.status','=',1);
+		$data = Db::table('sp_a_my_market_h_temp')
+			->alias('f')
+			->field('f.*,m.current,m.mc,m.fmc')
+			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
+			->where($where)
+			->select();
+		$arr = [];
+		foreach($data as $k=>$v){
+			$grow = ($v['current']-$v['xz_pct'])/$v['xz_pct']*100;
+			$h_bool = $v['buy_num']*2-0.5;
+			$l_bool = -$v['buy_num']*2;
+			$arr[$k]['id'] = $v['id'];
+			$arr[$k]['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
+			if($grow>=$h_bool){
+				$arr[$k]['status'] = 2;
+				$arr[$k]['mc'] = $v['mc'];
+				$arr[$k]['fmc'] = $v['fmc'];
+				$arr[$k]['sell_pct'] = $v['current'];
+				$arr[$k]['sell_date'] = $date;
+				$arr[$k]['grow'] = $grow;
+			}
+			if($grow<=$l_bool&&$v['buy_num']<8){
+				$arr[$k]['xz_pct'] = ($v['current']+$v['xz_pct'])/2;
+				$arr[$k]['buy_num'] = $v['buy_num']*2;
+			}
+			Db::table('sp_a_my_market_h_temp')->data($arr[$k])->update();
+		}
+		//return 1;
+    }
+	//  保存到sp_a_my_market_l_temp
+	public function addLtemp(){
+        set_time_limit(0);
+		$is_gzr = $this->is_jiaoyi_day();
+        if($is_gzr!=0){
+			return 0;   // 非工作日直接返回
+        }
+		$where[] = array('f.buy_type','=','0');
+		$date = date("Y-m-d");
+		$where[] = array('f.d1','=',$date);
+		$where = $this->cut_two();
+		$data = Db::table('sp_a_market_fund')
+			->alias('f')
+			->field('f.*,m.amount,m.fmc,m.indcode')
+			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
+			->where($where)
+			->select();
+		foreach($data as $k=>$v){
+			if($v['c1']<=0){
+				break;
+			}
+			$arr[$k]['code'] = $v['code'];
+			$arr[$k]['name'] = $v['name'];
+			$arr[$k]['indcode'] = $v['indcode'];
+			$arr[$k]['cut_type'] = 1;
+			$arr[$k]['green_num'] = $v['green_num'];
+			$arr[$k]['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
+			$arr[$k]['amount_pr'] = $v['amount']/10000/$v['fmc']*100;
+			$arr[$k]['buy_pct'] = $v['c1'];
+			$arr[$k]['xz_pct'] = $v['c1'];
+			$arr[$k]['buy_num'] = 1;
+			$arr[$k]['low_pr_sum'] = $this->get_green($v);
+			$arr[$k]['buy_date'] = $date;
+		}
+		Db::table('sp_a_my_market_l_temp')->data($arr)->insertAll();		
+		//return 1;
+    }
+		//  更新sp_a_my_market_h_temp
+	public function updateLtemp(){
+        set_time_limit(0);
+		$is_gzr = $this->is_jiaoyi_day();
+        if($is_gzr!=0){
+			return 0;   // 非工作日直接返回
+        }
+		$date = date("Y-m-d");
+		$where[] = array('f.status','=',1);
+		$data = Db::table('sp_a_my_market_l_temp')
+			->alias('f')
+			->field('f.*,m.current,m.mc,m.fmc')
+			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
+			->where($where)
+			->select();
+		$arr = [];
+		foreach($data as $k=>$v){
+			$grow = ($v['current']-$v['xz_pct'])/$v['xz_pct']*100;
+			$h_bool = $v['buy_num']*2-0.5;
+			$l_bool = -$v['buy_num']*2;
+			$arr[$k]['id'] = $v['id'];
+			$arr[$k]['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
+			if($grow>=$h_bool){
+				$arr[$k]['status'] = 2;
+				$arr[$k]['mc'] = $v['mc'];
+				$arr[$k]['fmc'] = $v['fmc'];
+				$arr[$k]['sell_pct'] = $v['current'];
+				$arr[$k]['sell_date'] = $date;
+				$arr[$k]['grow'] = $grow;
+			}
+			if($grow<=$l_bool&&$v['buy_num']<8){
+				$arr[$k]['xz_pct'] = ($v['current']+$v['xz_pct'])/2;
+				$arr[$k]['buy_num'] = $v['buy_num']*2;
+			}
+			Db::table('sp_a_my_market_l_temp')->data($arr[$k])->update();
+		}
 		
 		//return 1;
     }	
@@ -408,6 +542,15 @@ class Market extends Controller{
         return $out_put;
     }
 	
+	//得到连绿主力占比
+    public function get_green($data){
+		$value = 0;
+		for($i=1;$i<=$data['green_num'];$i++){
+			$tp = $i*10+1;
+			$value+=$data['f'.$tp];
+		}
+		return $value;
+    }
 	//  算法1
     public function cut_one(){
 		$where[] = array('f.green_num','>','6');
@@ -415,8 +558,9 @@ class Market extends Controller{
 		return $where;
     }
 	//  算法2
-    public function cut_two($data){
-        
+    public function cut_two(){
+        $where[] = array('f.green_num','>','3');
+		return $where;
     }
 
 }
