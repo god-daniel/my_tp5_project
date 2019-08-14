@@ -578,28 +578,29 @@ class Market extends Controller{
 			if($v['c1']<=0){
 				continue;
 			}			
-			$arr[$k]['code'] = $v['code'];
-			$arr[$k]['name'] = $v['name'];
-			$arr[$k]['indcode'] = $v['indcode'];
-			$arr[$k]['cut_type'] = 0;
-			$arr[$k]['green_num'] = $v['green_num'];
-			$arr[$k]['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
-			$arr[$k]['amount_pr'] = $v['amount']/10000/$v['fmc']*100;
-			$arr[$k]['buy_pct'] = $v['c1'];
-			$arr[$k]['xz_pct'] = $v['c1'];
-			$arr[$k]['buy_num'] = 1;
-			$arr[$k]['low_pr_sum'] = $this->get_green($v);
-			$arr[$k]['buy_date'] = $date;
-			$arr[$k]['g1'] = $v['g1'];
-			$arr[$k]['g2'] = $v['g2'];
-			$arr[$k]['g3'] = $v['g3'];
-			$arr[$k]['g4'] = $v['g4'];
-			$arr[$k]['g5'] = $v['g5'];
-			$arr[$k]['g6'] = $v['g6'];
-			$arr[$k]['g7'] = $v['g7'];
-			$arr[$k]['g8'] = $v['g8'];
+			$arr['code'] = $v['code'];
+			$arr['name'] = $v['name'];
+			$arr['indcode'] = $v['indcode'];
+			$arr['cut_type'] = 0;
+			$arr['green_num'] = $v['green_num'];
+			$arr['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
+			$arr['amount_pr'] = $v['amount']/10000/$v['fmc']*100;
+			$arr['buy_pct'] = $v['c1'];
+			$arr['xz_pct'] = $v['c1'];
+			$arr['buy_num'] = 1;
+			$arr['low_pr_sum'] = $this->get_green($v);
+			$arr['buy_date'] = $date;
+			$arr['g1'] = $v['g1'];
+			$arr['g2'] = $v['g2'];
+			$arr['g3'] = $v['g3'];
+			$arr['g4'] = $v['g4'];
+			$arr['g5'] = $v['g5'];
+			$arr['g6'] = $v['g6'];
+			$arr['g7'] = $v['g7'];
+			$arr['g8'] = $v['g8'];
+			Db::table('sp_a_my_market_all_temp')->data($arr)->insert();
 		}
-		Db::table('sp_a_my_market_all_temp')->data($arr)->insertAll();
+		
 		return 1;
     }
 		//  更新sp_a_my_market_all_temp
@@ -625,31 +626,31 @@ class Market extends Controller{
 				$h_bool = 3;
 			}
 			$l_bool = -$v['buy_num']*2;
-			$arr[$k]['id'] = $v['id'];
-			$arr[$k]['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
-			$arr[$k]['g1'] = $v['g1'];
-			$arr[$k]['g2'] = $v['g2'];
-			$arr[$k]['g3'] = $v['g3'];
-			$arr[$k]['g4'] = $v['g4'];
-			$arr[$k]['g5'] = $v['g5'];
-			$arr[$k]['g6'] = $v['g6'];
-			$arr[$k]['g7'] = $v['g7'];
-			$arr[$k]['g8'] = $v['g8'];
+			$arr['id'] = $v['id'];
+			$arr['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
+			$arr['g1'] = $v['g1'];
+			$arr['g2'] = $v['g2'];
+			$arr['g3'] = $v['g3'];
+			$arr['g4'] = $v['g4'];
+			$arr['g5'] = $v['g5'];
+			$arr['g6'] = $v['g6'];
+			$arr['g7'] = $v['g7'];
+			$arr['g8'] = $v['g8'];
 			if($grow>=$h_bool){
-				$arr[$k]['status'] = 2;
-				$arr[$k]['mc'] = $v['mc'];
-				$arr[$k]['fmc'] = $v['fmc'];
-				$arr[$k]['sell_pct'] = $v['current'];
-				$arr[$k]['sell_date'] = $date;
-				$arr[$k]['grow'] = $grow;
+				$arr['status'] = 2;
+				$arr['mc'] = $v['mc'];
+				$arr['fmc'] = $v['fmc'];
+				$arr['sell_pct'] = $v['current'];
+				$arr['sell_date'] = $date;
+				$arr['grow'] = $grow;
 			}
 			if($grow<=$l_bool&&$v['buy_num']<8){
-				$arr[$k]['xz_pct'] = ($v['current']+$v['xz_pct'])/2;
-				$arr[$k]['buy_num'] = $v['buy_num']*2;
+				$arr['xz_pct'] = ($v['current']+$v['xz_pct'])/2;
+				$arr['buy_num'] = $v['buy_num']*2;
 			}
-			Db::table('sp_a_my_market_all_temp')->data($arr[$k])->update();
+			Db::table('sp_a_my_market_all_temp')->data($arr)->update();
 		}
-		//return 1;
+		return 1;
     }	
 	//  是否交易日
 	public function is_jiaoyi_day($times=''){
