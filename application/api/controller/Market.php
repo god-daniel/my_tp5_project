@@ -359,7 +359,7 @@ class Market extends Controller{
 		$arr = [];
 		foreach($data as $k=>$v){
 			if($v['c1']<=0){
-				break;
+				continue;
 			}			
 			$arr[$k]['code'] = $v['code'];
 			$arr[$k]['name'] = $v['name'];
@@ -424,6 +424,7 @@ class Market extends Controller{
         }
 		$where[] = array('f.buy_type','=','0');
 		$date = date("Y-m-d");
+		$date = '2019-08-13';
 		$where[] = array('f.d1','=',$date);
 		$where = $this->cut_two();
 		$data = Db::table('sp_a_market_fund')
@@ -434,7 +435,7 @@ class Market extends Controller{
 			->select();
 		foreach($data as $k=>$v){
 			if($v['c1']<=0){
-				break;
+				continue;
 			}
 			$arr[$k]['code'] = $v['code'];
 			$arr[$k]['name'] = $v['name'];
@@ -450,7 +451,7 @@ class Market extends Controller{
 			$arr[$k]['buy_date'] = $date;
 		}
 		Db::table('sp_a_my_market_l_temp')->data($arr)->insertAll();		
-		//return 1;
+		return 1;
     }
 		//  更新sp_a_my_market_h_temp
 	public function updateLtemp(){
