@@ -439,7 +439,7 @@ class Market extends Controller{
 			$arr[$k]['code'] = $v['code'];
 			$arr[$k]['name'] = $v['name'];
 			$arr[$k]['indcode'] = $v['indcode'];
-			$arr[$k]['cut_type'] = 1;
+			$arr[$k]['cut_type'] = 2;
 			$arr[$k]['green_num'] = $v['green_num'];
 			$arr[$k]['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
 			$arr[$k]['amount_pr'] = $v['amount']/10000/$v['fmc']*100;
