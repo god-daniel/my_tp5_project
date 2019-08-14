@@ -611,7 +611,7 @@ class Market extends Controller{
         }
 		$date = date("Y-m-d");
 		$where[] = array('f.status','=',1);
-		$data = Db::table('sp_a_my_market_h_temp')
+		$data = Db::table('sp_a_my_market_all_temp')
 			->alias('f')
 			->field('f.*,m.current,m.mc,m.fmc,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
