@@ -424,7 +424,6 @@ class Market extends Controller{
         }
 		$where[] = array('f.buy_type','=','0');
 		$date = date("Y-m-d");
-		$date = '2019-08-13';
 		$where[] = array('f.d1','=',$date);
 		$where = $this->cut_two();
 		$data = Db::table('sp_a_market_fund')
