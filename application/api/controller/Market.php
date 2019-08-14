@@ -393,7 +393,9 @@ class Market extends Controller{
 			$arr[$k]['indcode'] = $v['indcode'];
 			$arr[$k]['cut_type'] = 1;
 			$arr[$k]['green_num'] = $v['green_num'];
-			$arr[$k]['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
+			if($v['green_num']>1){
+				$arr[$k]['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
+			}
 			$arr[$k]['amount_pr'] = $v['amount']/10000/$v['fmc']*100;
 			$arr[$k]['buy_pct'] = $v['c1'];
 			$arr[$k]['xz_pct'] = $v['c1'];
@@ -488,7 +490,9 @@ class Market extends Controller{
 			$arr[$k]['indcode'] = $v['indcode'];
 			$arr[$k]['cut_type'] = 2;
 			$arr[$k]['green_num'] = $v['green_num'];
-			$arr[$k]['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
+			if($v['green_num']>1){
+				$arr[$k]['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
+			}
 			$arr[$k]['amount_pr'] = $v['amount']/10000/$v['fmc']*100;
 			$arr[$k]['buy_pct'] = $v['c1'];
 			$arr[$k]['xz_pct'] = $v['c1'];
@@ -583,7 +587,9 @@ class Market extends Controller{
 			$arr['indcode'] = $v['indcode'];
 			$arr['cut_type'] = 0;
 			$arr['green_num'] = $v['green_num'];
-			$arr['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
+			if($v['green_num']>1){
+				$arr['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
+			}
 			$arr['amount_pr'] = $v['amount']/10000/$v['fmc']*100;
 			$arr['buy_pct'] = $v['c1'];
 			$arr['xz_pct'] = $v['c1'];
