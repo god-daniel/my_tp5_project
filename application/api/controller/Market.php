@@ -94,6 +94,33 @@ class Market extends Controller{
 		}
 		return 1;
     }
+	// 更新股票基础数据
+	public function baseUpdate(){
+		if(!input('param.g')){
+            return '没有传入参数';
+        }
+        set_time_limit(0);
+		$is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+		if($is_gzr==0){
+			$url = $this->host_two_base;
+			$out_put = $this->pq_http_get($url);
+			$res = json_decode($out_put,true);
+			$arr = [];
+			$base = new AMarket;
+			foreach ($res['data']['list'] as $k=>$v){
+				//turnover_rate
+				$arr[$k]['date'] = date("Y-m-d");
+				$arr[$k]['code'] = substr($v['symbol'],2);
+				$arr[$k]['g'.input('param.g')] = $v['pct'];
+				$arr[$k]['current'] = $v['current'];
+				$arr[$k]['pct'] = $v['pct'];
+				$arr[$k]['amount'] = round(($v['amount']/10000),2);
+				$base->where('code',$arr[$k]['code'])->update($arr[$k]);  //更新操作
+			}
+            //$day_mode->saveAll($day_arr);
+		}
+		return 1;
+    }	
     //  当日资金流数据
     public function dayList(){
         set_time_limit(0);
@@ -547,7 +574,6 @@ class Market extends Controller{
 			->where($where)
 			->select();
 		$arr = [];
-		var_dump($data);die;
 		foreach($data as $k=>$v){
 			if($v['c1']<=0){
 				continue;
