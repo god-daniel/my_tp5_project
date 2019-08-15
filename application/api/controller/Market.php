@@ -32,6 +32,7 @@ class Market extends Controller{
 	// 股票历史资金流采集网址（东方财富）
 	private $host_two_money = 'http://ff.eastmoney.com//EM_CapitalFlowInterface/api/js?type=hff&rtntype=2&js=({data:[(x)]})&cb=var%20aff_data=&check=TMLBMSPROCR&acces_token=1942f5da9b46b069953c873404aad4b5&id=$code$type&_=1562144862102';
     private $type = ['S1101'=>'种植业','S1102'=>'渔业','S1103'=>'林业','S1104'=>'饲料','S1105'=>'农产品加工','S1106'=>'农业综合','S1107'=>'禽畜养殖','S1108'=>'动物保健','S2101'=>'石油开采','S2102'=>'煤炭开采','S2103'=>'其它采掘','S2104'=>'采掘服务','S2201'=>'石油化工','S2202'=>'化学原料','S2203'=>'化学制品','S2204'=>'化学纤维','S2205'=>'塑料',''];
+	private $table = ['0'=>'','1'=>'','2'=>'','3'=>'','4'=>''];
     public function index(){
         var_dump(112);
     }
@@ -104,7 +105,9 @@ class Market extends Controller{
 		if($is_gzr==0){
 			$url = $this->host_base;
 			$out_put = $this->pq_http_get($url);
+			
 			$res = json_decode($out_put,true);
+			sleep(1);
 			$arr = [];
 			$base = new AMarket;
 			foreach ($res['data']['diff'] as $k=>$v){
@@ -562,6 +565,7 @@ class Market extends Controller{
         if($is_gzr!=0){
 			return 0;   // 非工作日直接返回
         }
+		$where[] = array('m.pct','>','-6');
 		$where[] = array('m.buy_type','in','0,2');
 		$date = date("Y-m-d");
 		$where[] = array('f.d1','=',$date);		
@@ -575,10 +579,7 @@ class Market extends Controller{
 		foreach($data as $k=>$v){
 			if($v['c1']<=0){
 				continue;
-			}
-			if($v['pct']<=-5){
-				continue;
-			}			
+			}		
 			$arr['code'] = $v['code'];
 			$arr['name'] = $v['name'];
 			$arr['indcode'] = $v['indcode'];
@@ -618,8 +619,120 @@ class Market extends Controller{
 			return 0;   // 非工作日直接返回
         }
 		$date = date("Y-m-d");
+		$where[] = array('m.pct','>','-6');
 		$where[] = array('f.status','=',1);
 		$data = Db::table('sp_a_my_market_all_temp')
+			->alias('f')
+			->field('f.*,m.current,m.mc,m.fmc,m.pre_current,m.max_current,m.open_current,m.pct')
+			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
+			->where($where)
+			->select();
+		$arr = [];
+		foreach($data as $k=>$v){
+			$grow = $this->grow_one();
+			$l_bool = -$v['buy_num']*0.02*$v['xz_pct'];
+			$arr[$k]['id'] = $v['id'];
+			$arr[$k]['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
+			if($grow){
+				$arr[$k]['status'] = 2;
+				$arr[$k]['mc'] = $v['mc'];
+				$arr[$k]['fmc'] = $v['fmc'];
+				$arr[$k]['sell_pct'] = $v['current'];
+				$arr[$k]['sell_date'] = $date;
+				$arr[$k]['grow'] = $grow;
+			}
+			if($v['current']<=$l_bool&&$v['buy_num']<8){
+				$arr[$k]['xz_pct'] = ($v['current']+$v['xz_pct'])/2;
+				$arr[$k]['buy_num'] = $v['buy_num']*2;
+			}
+			Db::table('sp_a_my_market_all_temp')->data($arr[$k])->update();
+		}
+		return 1;
+    }
+
+	//  保存 默认sp_a_my_market_all_temp 根据table参数 确定表几
+	public function addTemp(){
+        set_time_limit(0);
+		$is_gzr = $this->is_jiaoyi_day();
+        if($is_gzr!=0){
+			return 0;   // 非工作日直接返回
+        }
+		$table = 'sp_a_my_market_all_temp';
+		if(input('param.table')){
+            $table .= input('param.table');
+			switch (input('param.table'))
+			{
+				case 1:
+					expression = label1 时执行的代码 ;
+					break;  
+				case 2:
+					expression = label2 时执行的代码 ;
+					break;
+				default:
+					$where = $this->cut_one();
+					break;
+			}
+        }
+		$where[] = array('m.pct','>','-6');		
+		$where[] = array('m.buy_type','in','0,2');
+		$date = date("Y-m-d");
+		$where[] = array('f.d1','=',$date);		
+		$data = Db::table('sp_a_market_fund')
+			->alias('f')
+			->field('f.*,m.amount,m.fmc,m.indcode,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8,m.open_current,m.pre_current,m.pct')
+			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
+			->where($where)
+			->select();
+		$arr = [];
+		foreach($data as $k=>$v){
+			if($v['c1']<=0){
+				continue;
+			}		
+			$arr['code'] = $v['code'];
+			$arr['name'] = $v['name'];
+			$arr['indcode'] = $v['indcode'];
+			$arr['cut_type'] = 0;
+			$arr['green_num'] = $v['green_num'];
+			if($v['green_num']>1){
+				$arr['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
+			}
+			$arr['amount_pr'] = $v['amount']/10000/$v['fmc']*100;
+			$arr['buy_pct'] = $v['c1'];
+			$arr['xz_pct'] = $v['c1'];
+			$arr['buy_num'] = 1;
+			$arr['low_pr_sum'] = $this->get_green($v);
+			$arr['buy_date'] = $date;
+			$arr['g1'] = $v['g1'];
+			$arr['g2'] = $v['g2'];
+			$arr['g3'] = $v['g3'];
+			$arr['g4'] = $v['g4'];
+			$arr['g5'] = $v['g5'];
+			$arr['g6'] = $v['g6'];
+			$arr['g7'] = $v['g7'];
+			$arr['g8'] = $v['g8'];
+			$arr['now_grow'] = $v['p1'];
+			$arr['pre_grow'] = $v['p2'];
+			$arr['pre_current'] = $v['pre_current'];
+			$arr['open_current'] = $v['open_current'];
+			Db::table($table)->data($arr)->insert();
+		}
+		
+		return 1;
+    }
+	//  更新 默认sp_a_my_market_all_temp 根据table参数 确定表几
+	public function updateTemp(){
+        set_time_limit(0);
+		$is_gzr = $this->is_jiaoyi_day();
+        if($is_gzr!=0){
+			return 0;   // 非工作日直接返回
+        }
+		$table = 'sp_a_my_market_all_temp';
+		if(input('param.table')){
+            $table .= input('param.table');
+        }
+		$date = date("Y-m-d");
+		$where[] = array('f.status','=',1);
+		$data = Db::table($table)
 			->alias('f')
 			->field('f.*,m.current,m.mc,m.fmc,m.pre_current,m.max_current,m.open_current,m.pct')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
@@ -646,7 +759,7 @@ class Market extends Controller{
 				$arr[$k]['xz_pct'] = ($v['current']+$v['xz_pct'])/2;
 				$arr[$k]['buy_num'] = $v['buy_num']*2;
 			}
-			Db::table('sp_a_my_market_all_temp')->data($arr[$k])->update();
+			Db::table($table)->data($arr[$k])->update();
 		}
 		return 1;
     }	
