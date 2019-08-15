@@ -571,13 +571,16 @@ class Market extends Controller{
 		$where[] = array('f.d1','=',$date);		
 		$data = Db::table('sp_a_market_fund')
 			->alias('f')
-			->field('f.*,m.amount,m.fmc,m.indcode,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8')
+			->field('f.*,m.amount,m.fmc,m.indcode,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8,m.open_current,m.pre_current,m.pct')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
 		$arr = [];
 		foreach($data as $k=>$v){
 			if($v['c1']<=0){
+				continue;
+			}
+			if($v['pct']<=-5){
 				continue;
 			}			
 			$arr['code'] = $v['code'];
@@ -602,12 +605,16 @@ class Market extends Controller{
 			$arr['g6'] = $v['g6'];
 			$arr['g7'] = $v['g7'];
 			$arr['g8'] = $v['g8'];
+			$arr['now_grow'] = $v['p1'];
+			$arr['pre_grow'] = $v['p2'];
+			$arr['pre_current'] = $v['pre_current'];
+			$arr['open_current'] = $v['open_current'];
 			Db::table('sp_a_my_market_all_temp')->data($arr)->insert();
 		}
 		
 		return 1;
     }
-		//  更新sp_a_my_market_all_temp
+	//  更新sp_a_my_market_all_temp
 	public function updateAlltemp(){
         set_time_limit(0);
 		$is_gzr = $this->is_jiaoyi_day();
@@ -618,13 +625,15 @@ class Market extends Controller{
 		$where[] = array('f.status','=',1);
 		$data = Db::table('sp_a_my_market_all_temp')
 			->alias('f')
-			->field('f.*,m.current,m.mc,m.fmc,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8,m.pre_current,m.max_current,m.open_current')
+			->field('f.*,m.current,m.mc,m.fmc,m.pre_current,m.max_current,m.open_current,m.pct')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
 		$arr = [];
 		foreach($data as $k=>$v){
-			
+			if($v['pct']<=-5){
+				continue;
+			}
 			$grow = $this->grow_one();
 			$l_bool = -$v['buy_num']*0.02*$v['xz_pct'];
 			$arr[$k]['id'] = $v['id'];
