@@ -760,19 +760,19 @@ class Market extends Controller{
 		$arr = [];
 		foreach($data as $k=>$v){
 			$l_bool = -$v['buy_num']*0.02*$v['xz_pct'];
-			$arr[$k]['id'] = $v['id'];
-			$arr[$k]['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
+			$arr[0]['id'] = $v['id'];
+			$arr[0]['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
 			if($grow){
-				$arr[$k]['status'] = 2;
-				$arr[$k]['sell_pct'] = $v['current'];
-				$arr[$k]['sell_date'] = $date;
-				$arr[$k]['grow'] = $grow;
+				$arr[0]['status'] = 2;
+				$arr[0]['sell_pct'] = $v['current'];
+				$arr[0]['sell_date'] = $date;
+				$arr[0]['grow'] = $grow;
 			}
 			if($v['current']<=$l_bool&&$v['buy_num']<8){
-				$arr[$k]['xz_pct'] = ($v['current']+$v['xz_pct'])/2;
-				$arr[$k]['buy_num'] = $v['buy_num']*2;
+				$arr[0]['xz_pct'] = ($v['current']+$v['xz_pct'])/2;
+				$arr[0]['buy_num'] = $v['buy_num']*2;
 			}
-			Db::table($table)->data($arr[$k])->update();
+			Db::table($table)->data($arr[0])->update();
 		}
 		return 1;
     }	
