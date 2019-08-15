@@ -20,9 +20,9 @@ class Market extends Controller{
     private $pageNo;
     private $keywords;
 
-	// 基础股票采集网址（东方财富）
+	// 基础股票采集网址（东方财富） 沪深A股 展示网址 http://quote.eastmoney.com/center/gridlist.html#hs_a_board
 	
-	private $host_base = 'http://21.push2.eastmoney.com/api/qt/clist/get?cb=jQuery1124014069351677765463_1561970756781&pn=1&pz=10000&po=0&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f2&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2&fields=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f13,f14,f15,f16,f17,f18,f20,f21,f23,f24,f25,f22,f11,f62,f128,f136,f115,f152&_=1561970756952';
+	private $host_base = 'http://21.push2.eastmoney.com/api/qt/clist/get?pn=1&pz=10000&po=0&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f2&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2&fields=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f13,f14,f15,f16,f17,f18,f20,f21,f23,f24,f25,f22,f11,f62,f128,f136,f115,f152';
 	
 	// 基础股票采集网址（雪球）
 	private $host_two_base = 'https://xueqiu.com/service/screener/screen?category=CN&exchange=sh_sz&areacode=&indcode=&order_by=current&order=asc&page=1&size=10000&only_count=0&current=0.14_1000&pct=&tr=0_70.33&fmc=40493376_1528701245096&mc=114125000_2020823477695&bps.20190331=-6.17_98.76&eps.20190331=-0.82_8.93&volume_ratio=0_84.79&amount=0_9012422827.11&pct_current_year=-88.82_500&_=1562142373571';
@@ -102,20 +102,30 @@ class Market extends Controller{
         set_time_limit(0);
 		$is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
 		if($is_gzr==0){
-			$url = $this->host_two_base;
+			$url = $this->host_base;
 			$out_put = $this->pq_http_get($url);
 			$res = json_decode($out_put,true);
 			$arr = [];
 			$base = new AMarket;
-			foreach ($res['data']['list'] as $k=>$v){
+			foreach ($res['data']['diff'] as $k=>$v){
+				
 				//turnover_rate
-				$arr[$k]['date'] = date("Y-m-d");
+/* 				$arr[$k]['date'] = date("Y-m-d");
 				$arr[$k]['code'] = substr($v['symbol'],2);
 				$arr[$k]['g'.input('param.g')] = $v['pct'];
 				$arr[$k]['current'] = $v['current'];
 				$arr[$k]['pct'] = $v['pct'];
 				$arr[$k]['amount'] = round(($v['amount']/10000),2);
-				$base->where('code',$arr[$k]['code'])->update($arr[$k]);  //更新操作
+				$base->where('code',$arr[$k]['code'])->update($arr[$k]);  //更新操作 */
+				if($v['f2']>0){
+					$arr[0]['date'] = date("Y-m-d");
+					$arr[0]['code'] = $v['f12'];
+					$arr[0]['g'.input('param.g')] = $v['f2']-$v['f18'];
+					$arr[0]['current'] = $v['f2'];
+					$arr[0]['pct'] = $v['f3'];
+					$arr[0]['amount'] = round(($v['f6']/10000),2);
+					$base->where('code',$arr[0]['code'])->update($arr[0]);
+				}
 			}
             //$day_mode->saveAll($day_arr);
 		}
@@ -425,7 +435,7 @@ class Market extends Controller{
 		$where[] = array('f.status','=',1);
 		$data = Db::table('sp_a_my_market_h_temp')
 			->alias('f')
-			->field('f.*,m.current,m.mc,m.fmc,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8')
+			->field('f.*,m.current,m.mc,m.fmc,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8,m.pre_current,m.max_current,m.open_current')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
@@ -439,14 +449,6 @@ class Market extends Controller{
 			$l_bool = -$v['buy_num']*2;
 			$arr[$k]['id'] = $v['id'];
 			$arr[$k]['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
-			$arr[$k]['g1'] = $v['g1'];
-			$arr[$k]['g2'] = $v['g2'];
-			$arr[$k]['g3'] = $v['g3'];
-			$arr[$k]['g4'] = $v['g4'];
-			$arr[$k]['g5'] = $v['g5'];
-			$arr[$k]['g6'] = $v['g6'];
-			$arr[$k]['g7'] = $v['g7'];
-			$arr[$k]['g8'] = $v['g8'];
 			if($grow>=$h_bool){
 				$arr[$k]['status'] = 2;
 				$arr[$k]['mc'] = $v['mc'];
@@ -522,7 +524,7 @@ class Market extends Controller{
 		$where[] = array('f.status','=',1);
 		$data = Db::table('sp_a_my_market_l_temp')
 			->alias('f')
-			->field('f.*,m.current,m.mc,m.fmc,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8')
+			->field('f.*,m.current,m.mc,m.fmc,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8,m.pre_current,m.max_current,m.open_current')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
@@ -536,14 +538,6 @@ class Market extends Controller{
 			$l_bool = -$v['buy_num']*2;
 			$arr[$k]['id'] = $v['id'];
 			$arr[$k]['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
-			$arr[$k]['g1'] = $v['g1'];
-			$arr[$k]['g2'] = $v['g2'];
-			$arr[$k]['g3'] = $v['g3'];
-			$arr[$k]['g4'] = $v['g4'];
-			$arr[$k]['g5'] = $v['g5'];
-			$arr[$k]['g6'] = $v['g6'];
-			$arr[$k]['g7'] = $v['g7'];
-			$arr[$k]['g8'] = $v['g8'];
 			if($grow>=$h_bool){
 				$arr[$k]['status'] = 2;
 				$arr[$k]['mc'] = $v['mc'];
@@ -620,29 +614,18 @@ class Market extends Controller{
 		$where[] = array('f.status','=',1);
 		$data = Db::table('sp_a_my_market_all_temp')
 			->alias('f')
-			->field('f.*,m.current,m.mc,m.fmc,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8')
+			->field('f.*,m.current,m.mc,m.fmc,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8,m.pre_current,m.max_current,m.open_current')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
 		$arr = [];
 		foreach($data as $k=>$v){
-			$grow = ($v['current']-$v['xz_pct'])/$v['xz_pct']*100;
-			$h_bool = $v['buy_num']*2-0.5;
-			if($h_bool>4){
-				$h_bool = 3;
-			}
-			$l_bool = -$v['buy_num']*2;
+			
+			$grow = $this->grow_one();
+			$l_bool = -$v['buy_num']*0.02*$v['xz_pct'];
 			$arr[$k]['id'] = $v['id'];
 			$arr[$k]['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
-			$arr[$k]['g1'] = $v['g1'];
-			$arr[$k]['g2'] = $v['g2'];
-			$arr[$k]['g3'] = $v['g3'];
-			$arr[$k]['g4'] = $v['g4'];
-			$arr[$k]['g5'] = $v['g5'];
-			$arr[$k]['g6'] = $v['g6'];
-			$arr[$k]['g7'] = $v['g7'];
-			$arr[$k]['g8'] = $v['g8'];
-			if($grow>=$h_bool){
+			if($grow){
 				$arr[$k]['status'] = 2;
 				$arr[$k]['mc'] = $v['mc'];
 				$arr[$k]['fmc'] = $v['fmc'];
@@ -650,7 +633,7 @@ class Market extends Controller{
 				$arr[$k]['sell_date'] = $date;
 				$arr[$k]['grow'] = $grow;
 			}
-			if($grow<=$l_bool&&$v['buy_num']<8){
+			if($v['current']<=$l_bool&&$v['buy_num']<8){
 				$arr[$k]['xz_pct'] = ($v['current']+$v['xz_pct'])/2;
 				$arr[$k]['buy_num'] = $v['buy_num']*2;
 			}
@@ -718,13 +701,23 @@ class Market extends Controller{
 		}
 		return $value;
     }
-	//  算法1
+	//  收益算法1 固定1.5个点
+    public function grow_one($v){
+		$sy = 0.015*$v['xz_pct'];
+		$grow = 0;
+		if($v['max_current']>=$sy){
+			$grow = 1.5;
+		}
+		return $grow;
+    }
+	
+	//  筛选算法1
     public function cut_one(){
 		$where[] = array('f.green_num','>','6');
 		$where[] = array('f.c1','>','5');
 		return $where;
     }
-	//  算法2
+	//  筛选算法2
     public function cut_two(){
         $where[] = array('f.green_num','>','3');
 		return $where;
