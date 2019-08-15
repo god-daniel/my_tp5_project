@@ -745,6 +745,7 @@ class Market extends Controller{
 			}
         }
 		$date = date("Y-m-d");
+		$where[] = array('m.pct','>','-6');
 		$where[] = array('f.status','=',1);
 		$data = Db::table($table)
 			->alias('f')
@@ -754,9 +755,6 @@ class Market extends Controller{
 			->select();
 		$arr = [];
 		foreach($data as $k=>$v){
-			if($v['pct']<=-5){
-				continue;
-			}
 			$l_bool = -$v['buy_num']*0.02*$v['xz_pct'];
 			$arr[$k]['id'] = $v['id'];
 			$arr[$k]['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
