@@ -703,8 +703,8 @@ class Market extends Controller{
 			$arr['amount_pr'] = $v['amount']/10000/$v['fmc']*100;
 			$arr['buy_pct'] = $v['c1'];
 			$arr['xz_pct'] = $v['c1'];
-			$arr[$k]['mc'] = $v['mc'];
-			$arr[$k]['fmc'] = $v['fmc'];
+			$arr['mc'] = $v['mc'];
+			$arr['fmc'] = $v['fmc'];
 			$arr['buy_num'] = 1;
 			$arr['low_pr_sum'] = $this->get_green($v);
 			$arr['buy_date'] = $date;
