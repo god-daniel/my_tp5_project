@@ -125,6 +125,9 @@ class Market extends Controller{
 					$arr[0]['code'] = $v['f12'];
 					$arr[0]['g'.input('param.g')] = $v['f2']-$v['f18'];
 					$arr[0]['current'] = $v['f2'];
+					$arr[0]['pre_current'] = $v['f18'];
+					$arr[0]['open_current'] = $v['f17'];
+					$arr[0]['max_current'] = $v['f15'];
 					$arr[0]['pct'] = $v['f3'];
 					$arr[0]['amount'] = round(($v['f6']/10000),2);
 					$base->where('code',$arr[0]['code'])->update($arr[0]);
