@@ -681,7 +681,7 @@ class Market extends Controller{
 		$where[] = array('f.d1','=',$date);		
 		$data = Db::table('sp_a_market_fund')
 			->alias('f')
-			->field('f.*,m.amount,m.fmc,m.indcode,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8,m.open_current,m.pre_current,m.pct')
+			->field('f.*,m.amount,m.mc,m.fmc,m.indcode,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8,m.open_current,m.pre_current,m.pct')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
@@ -701,6 +701,8 @@ class Market extends Controller{
 			$arr['amount_pr'] = $v['amount']/10000/$v['fmc']*100;
 			$arr['buy_pct'] = $v['c1'];
 			$arr['xz_pct'] = $v['c1'];
+			$arr[$k]['mc'] = $v['mc'];
+			$arr[$k]['fmc'] = $v['fmc'];
 			$arr['buy_num'] = 1;
 			$arr['low_pr_sum'] = $this->get_green($v);
 			$arr['buy_date'] = $date;
@@ -760,8 +762,6 @@ class Market extends Controller{
 			$arr[$k]['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
 			if($grow){
 				$arr[$k]['status'] = 2;
-				$arr[$k]['mc'] = $v['mc'];
-				$arr[$k]['fmc'] = $v['fmc'];
 				$arr[$k]['sell_pct'] = $v['current'];
 				$arr[$k]['sell_date'] = $date;
 				$arr[$k]['grow'] = $grow;
