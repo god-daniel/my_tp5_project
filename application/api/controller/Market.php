@@ -733,20 +733,10 @@ class Market extends Controller{
 			return 0;   // 非工作日直接返回
         }
 		$table = 'sp_a_my_market_all_temp';
+		$cut_type = 0;
 		if(input('param.table')){
             $table .= input('param.table');
-			switch (input('param.table'))
-			{
-				case 1:
-					$grow = $this->cut_one();
-					break;  
-				case 2:
-					$grow = $this->cut_one();
-					break;
-				default:
-					$grow = $this->cut_one();
-					break;
-			}
+			$cut_type = input('param.table');
         }
 		$date = date("Y-m-d");
 		$where[] = array('m.pct','>','-6');
@@ -759,6 +749,18 @@ class Market extends Controller{
 			->select();
 		$arr = [];
 		foreach($data as $k=>$v){
+			switch ($cut_type)
+			{
+				case 1:
+					$grow = $this->grow_one($v);
+					break;  
+				case 2:
+					$grow = $this->grow_one($v);
+					break;
+				default:
+					$grow = $this->grow_one($v);
+					break;
+			}
 			$l_bool = -$v['buy_num']*0.02*$v['xz_pct'];
 			$arr['id'] = $v['id'];
 			$arr['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
@@ -767,11 +769,14 @@ class Market extends Controller{
 				$arr['sell_pct'] = $v['current'];
 				$arr['sell_date'] = $date;
 				$arr['grow'] = $grow;
+				$arr['max_current'] = $v['max_current'];
+				$arr['max_grow'] = ($v['max_current']-$v['xz_pct'])/$v['xz_pct']*100;;
 			}
 			if($v['current']<=$l_bool&&$v['buy_num']<8){
 				$arr['xz_pct'] = ($v['current']+$v['xz_pct'])/2;
 				$arr['buy_num'] = $v['buy_num']*2;
 			}
+			//Db::table($table)->update($arr);
 			Db::table($table)->data($arr)->update();
 		}
 		return 1;
@@ -838,7 +843,7 @@ class Market extends Controller{
     }
 	//  收益算法1 固定1.5个点
     public function grow_one($v){
-		$sy = 0.015*$v['xz_pct'];
+		$sy = 1.015*$v['xz_pct'];
 		$grow = 0;
 		if($v['max_current']>=$sy){
 			$grow = 1.5;
