@@ -661,8 +661,10 @@ class Market extends Controller{
 			return 0;   // 非工作日直接返回
         }
 		$table = 'sp_a_my_market_all_temp';
+		$cut_type = 0;
 		if(input('param.table')){
             $table .= input('param.table');
+			$cut_type = input('param.table');
 			switch (input('param.table'))
 			{
 				case 1:
@@ -693,7 +695,7 @@ class Market extends Controller{
 			$arr['code'] = $v['code'];
 			$arr['name'] = $v['name'];
 			$arr['indcode'] = $v['indcode'];
-			$arr['cut_type'] = 0;
+			$arr['cut_type'] = $cut_type;
 			$arr['green_num'] = $v['green_num'];
 			if($v['green_num']>1){
 				$arr['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
