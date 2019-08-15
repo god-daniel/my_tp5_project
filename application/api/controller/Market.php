@@ -663,11 +663,12 @@ class Market extends Controller{
 			switch (input('param.table'))
 			{
 				case 1:
+					$where = $this->cut_one();
 					break;  
 				case 2:
+					$where = $this->cut_two();
 					break;
 				default:
-					$where = $this->cut_one();
 					break;
 			}
         }
@@ -727,6 +728,18 @@ class Market extends Controller{
 		$table = 'sp_a_my_market_all_temp';
 		if(input('param.table')){
             $table .= input('param.table');
+			switch (input('param.table'))
+			{
+				case 1:
+					$grow = $this->cut_one();
+					break;  
+				case 2:
+					$grow = $this->cut_one();
+					break;
+				default:
+					$grow = $this->cut_one();
+					break;
+			}
         }
 		$date = date("Y-m-d");
 		$where[] = array('f.status','=',1);
@@ -741,7 +754,6 @@ class Market extends Controller{
 			if($v['pct']<=-5){
 				continue;
 			}
-			$grow = $this->grow_one();
 			$l_bool = -$v['buy_num']*0.02*$v['xz_pct'];
 			$arr[$k]['id'] = $v['id'];
 			$arr[$k]['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
