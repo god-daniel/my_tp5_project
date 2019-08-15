@@ -663,10 +663,8 @@ class Market extends Controller{
 			switch (input('param.table'))
 			{
 				case 1:
-					expression = label1 时执行的代码 ;
 					break;  
 				case 2:
-					expression = label2 时执行的代码 ;
 					break;
 				default:
 					$where = $this->cut_one();
