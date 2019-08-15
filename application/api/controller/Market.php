@@ -105,6 +105,10 @@ class Market extends Controller{
 			$url = $this->host_base;
 			$out_put = $this->pq_http_get($url);
 			$res = json_decode($out_put,true);
+			if(!$res){
+				$out_put = $this->pq_http_get($url);
+				$res = json_decode($out_put,true);
+			}
 			$arr = [];
 			$base = new AMarket;
 			foreach ($res['data']['diff'] as $k=>$v){
