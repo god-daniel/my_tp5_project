@@ -676,6 +676,7 @@ class Market extends Controller{
 		if(!$cache){
 			return 1;
 		}
+		var_dump(1111);die;
 		$count = count($cache);
 		$temp = Db::table($table)
 			->order('id', 'desc')
@@ -774,7 +775,7 @@ class Market extends Controller{
 		$sy = (1+$grow/100)*$v['xz_pct'];
 		$sell_grow = 0;
 		if($v['current']>=$sy){
-			$sell_grow = $grow;
+			$sell_grow = ($v['current']-$v['xz_pct'])/$v['xz_pct']*100;
 		}
 		return $sell_grow;
     }
