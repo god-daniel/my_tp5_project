@@ -683,13 +683,16 @@ class Market extends Controller{
 			->select();	
 		foreach($cache as $k=>$v){
 			$cache[$k]['diff_money'] = $cache[$k]['buy_money']-$cache[$k]['sell_money'];//今日的资金占用情况
+			$cache[$k]['count_money'] = $cache[$k]['diff_money'];
 			$cache[$k]['date'] = $date;
 			foreach($temp as $kk=>$vv){
 				if($vv['table']==$k){
 					$cache[$k]['count_money'] = $vv['count_money']+$cache[$k]['diff_money'];  //总的资金占用情况
 				}
 			}
+			
 		}
+		Db::table('sp_a_my_market_all_money')->data($cache)->insertAll();
 		var_dump($cache);		
     }
 	public function clear_cache(){
