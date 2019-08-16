@@ -598,9 +598,10 @@ class Market extends Controller{
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
-		$arr = [];
+		
 		//var_dump($data);die;
 		foreach($data as $k=>$v){
+			$arr = [];
 			$grow = 0;
 			switch ($cut_type)
 			{
@@ -626,8 +627,6 @@ class Market extends Controller{
 					$grow = $this->get_grow_one($v,1.5);
 					break;
 			}
-			echo 'grow:'.$grow;
-			echo '</br>';
 			$low = 0.03;
 			if($v['buy_num']>1){
 				$low = 0.04;
@@ -646,6 +645,8 @@ class Market extends Controller{
 				$sell_money += $v['buy_num'];
 				$all_grow = $all_grow+$v['buy_num']*$grow;
 			}
+			//echo 'grow:'.$grow.'max_current:'.$v['max_current'].'sell_pct:'.$arr['sell_pct'].'xz_pct'.$v['xz_pct'];
+			//echo '</br>';
 			if($v['current']>$sell_c&&$v['buy_num']>1){  //减仓
 				$arr['buy_num'] = $v['buy_num']/2;
 				$arr['sell_cs'] = $v['sell_cs']+1;
@@ -658,10 +659,6 @@ class Market extends Controller{
 				$arr['buy_cs'] = $v['buy_cs']+1;
 				$buy_money += $v['buy_num'];
 			}
-/* 			if($v['code']=='002056'){
-				var_dump($arr);die;
-			} */
-			//Db::table($table)->update($arr);
 			Db::table($table)->data($arr)->update();
 		}
 		if($cut_type){ //缓存买入总量 卖出总量
@@ -684,6 +681,8 @@ class Market extends Controller{
 			->order('id', 'desc')
 			->limit($count)
 			->select();
+		var_dump($count);
+		var_dump($temp);die;	
 		foreach($cache as $k=>$v){
 			$cache[$k]['diff_money'] = $cache[$k]['buy_money']-$cache[$k]['sell_money'];//今日的资金占用情况
 			$cache[$k]['date'] = $date;
@@ -766,8 +765,8 @@ class Market extends Controller{
 		if($v['max_current']>=$sy){
 			$sell_grow = $grow;
 		}
-		echo 'sell_grow:'.$sell_grow.'code:'.$v['code'].'xz_pct:'.$v['xz_pct'].'max_current:'.$v['max_current'].'sy:'.$sy;
-		echo '</br>';
+		//echo 'sell_grow:'.$sell_grow.'code:'.$v['code'].'xz_pct:'.$v['xz_pct'].'max_current:'.$v['max_current'].'sy:'.$sy;
+		//echo '</br>';
 		return $sell_grow;
     }
 	//  收益算法  收盘价收益 grow收益百分点
