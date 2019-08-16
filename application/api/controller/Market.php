@@ -642,6 +642,7 @@ class Market extends Controller{
 				$arr['grow'] = $grow;
 				$arr['max_current'] = $v['max_current'];
 				$arr['max_grow'] = ($v['max_current']-$v['xz_pct'])/$v['xz_pct']*100;
+				$arr['sell_cs'] = $v['sell_cs']+1;
 				$sell_money += $v['buy_num'];
 				$all_grow = $all_grow+$v['buy_num']*$grow;
 			}
