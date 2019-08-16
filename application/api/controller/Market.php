@@ -594,7 +594,7 @@ class Market extends Controller{
 		$where[] = array('f.status','=',1);
 		$data = Db::table($table)
 			->alias('f')
-			->field('f.id,f.code,f.name,f.xz_pct,f.buy_cs,f.buy_num,f.sell_cs,m.current,m.max_current,m.open_current,m.pct,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8')
+			->field('f.id,f.code,f.name,f.xz_pct,f.buy_cs,f.buy_num,f.sell_cs,f.buy_date,m.current,m.max_current,m.open_current,m.pct,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
@@ -655,6 +655,9 @@ class Market extends Controller{
 				$arr['buy_cs'] = $v['buy_cs']+1;
 				$buy_money += $v['buy_num'];
 			}
+/* 			if($v['code']=='002056'){
+				var_dump($arr);die;
+			} */
 			//Db::table($table)->update($arr);
 			Db::table($table)->data($arr)->update();
 		}
