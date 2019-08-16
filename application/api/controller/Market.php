@@ -601,6 +601,7 @@ class Market extends Controller{
 		$arr = [];
 		//var_dump($data);die;
 		foreach($data as $k=>$v){
+			$grow = 0;
 			switch ($cut_type)
 			{
 				case 1:
@@ -625,6 +626,8 @@ class Market extends Controller{
 					$grow = $this->get_grow_one($v,1.5);
 					break;
 			}
+			echo 'grow:'.$grow;
+			echo '</br>';
 			$low = 0.03;
 			if($v['buy_num']>1){
 				$low = 0.04;
@@ -635,7 +638,7 @@ class Market extends Controller{
 			$arr['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
 			if($grow){                //清仓
 				$arr['status'] = 2;
-				$arr['sell_pct'] = $v['current'];
+				$arr['sell_pct'] = (1+$grow/100)*$v['xz_pct'];
 				$arr['sell_date'] = $date;
 				$arr['grow'] = $grow;
 				$arr['max_current'] = $v['max_current'];
@@ -763,6 +766,8 @@ class Market extends Controller{
 		if($v['max_current']>=$sy){
 			$sell_grow = $grow;
 		}
+		echo 'sell_grow:'.$sell_grow.'code:'.$v['code'].'xz_pct:'.$v['xz_pct'].'max_current:'.$v['max_current'].'sy:'.$sy;
+		echo '</br>';
 		return $sell_grow;
     }
 	//  收益算法  收盘价收益 grow收益百分点
