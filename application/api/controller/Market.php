@@ -669,10 +669,22 @@ class Market extends Controller{
 	public function saveMoney(){
 		$date = date("Y-m-d");
 		$cache = Cache::get('count_num'.$date);
+		if(!$cache){
+			return 1;
+		}
+		$count = count($cache);
+		$temp = Db::table($table)
+			->order('id', 'desc')
+			->limit($count)
+			->select();
 		foreach($cache as $k=>$v){
-			$cache[$k]['count_money'] = 0;
-			$cache[$k]['diff_money'] = $cache[$k]['buy_money']-$cache[$k]['sell_money'];
+			$cache[$k]['diff_money'] = $cache[$k]['buy_money']-$cache[$k]['sell_money'];//今日的资金占用情况
 			$cache[$k]['date'] = $date;
+			foreach($temp as $kk=>$vv){
+				if($vv['table']==$k){
+					$cache[$k]['count_money'] = $vv['count_money']+$cache[$k]['diff_money'];  //总的资金占用情况
+				}
+			}
 		}
 		var_dump($cache);		
     }
@@ -756,10 +768,12 @@ class Market extends Controller{
     }
 	//  收益算法  10点半后 设置固定收益 grow收益百分点
     public function get_grow_three($v,$grow=1.5){
+		$max = $g1 > $g2 ? ($g1> $g3 ? $g1 : $g3) : ($g2 > $g3 ? $g2 : $g3);
+		$m_current = $v['xz_pct']+$max;
 		$sy = (1+$grow/100)*$v['xz_pct'];
 		$grow = 0;
-		if($v['max_current']>=$sy){
-			$grow = $grow;
+		if($m_current>=$sy){
+			$grow = $max/$v['xz_pct'];
 		}
 		return $grow;
     }	
