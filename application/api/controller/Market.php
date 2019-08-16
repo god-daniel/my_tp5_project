@@ -688,6 +688,10 @@ class Market extends Controller{
 		}
 		var_dump($cache);		
     }
+	public function clear_cache(){
+		$date = date("Y-m-d");
+		Cache::rm('count_num'.$date);
+	}
 	//  是否交易日
 	public function is_jiaoyi_day($times=''){
 		$date = date("Ymd",time());
