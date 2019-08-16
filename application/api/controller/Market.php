@@ -594,11 +594,12 @@ class Market extends Controller{
 		$where[] = array('f.status','=',1);
 		$data = Db::table($table)
 			->alias('f')
-			->field('f.*,m.current,m.mc,m.fmc,m.pre_current,m.max_current,m.open_current,m.pct,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8')
+			->field('f.id,f.code,f.name,f.xz_pct,f.buy_cs,f.buy_num,f.sell_cs,m.current,m.max_current,m.open_current,m.pct,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
 		$arr = [];
+		//var_dump($data);die;
 		foreach($data as $k=>$v){
 			switch ($cut_type)
 			{
@@ -755,31 +756,31 @@ class Market extends Controller{
 	//  收益算法  固定收益 grow收益百分点
     public function get_grow_one($v,$grow=1.5){
 		$sy = (1+$grow/100)*$v['xz_pct'];
-		$grow = 0;
+		$sell_grow = 0;
 		if($v['max_current']>=$sy){
-			$grow = $grow;
+			$sell_grow = $grow;
 		}
-		return $grow;
+		return $sell_grow;
     }
 	//  收益算法  收盘价收益 grow收益百分点
     public function get_grow_two($v,$grow=1.5){
 		$sy = (1+$grow/100)*$v['xz_pct'];
-		$grow = 0;
+		$sell_grow = 0;
 		if($v['current']>=$sy){
-			$grow = $grow;
+			$sell_grow = $grow;
 		}
-		return $grow;
+		return $sell_grow;
     }
 	//  收益算法  10点半后 设置固定收益 grow收益百分点
     public function get_grow_three($v,$grow=1.5){
 		$max = $g1 > $g2 ? ($g1> $g3 ? $g1 : $g3) : ($g2 > $g3 ? $g2 : $g3);
 		$m_current = $v['xz_pct']+$max;
 		$sy = (1+$grow/100)*$v['xz_pct'];
-		$grow = 0;
+		$sell_grow = 0;
 		if($m_current>=$sy){
-			$grow = $max/$v['xz_pct'];
+			$sell_grow = $max/$v['xz_pct'];
 		}
-		return $grow;
+		return $sell_grow;
     }	
 	//  筛选算法1
     public function cut_one(){
