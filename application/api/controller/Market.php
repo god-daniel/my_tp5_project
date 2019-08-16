@@ -497,7 +497,7 @@ class Market extends Controller{
 		if(input('param.table')){
             $table .= input('param.table');
 			$cut_type = input('param.table');
-			switch (input('param.table'))
+			switch ($cut_type)
 			{
 				case 1:
 					$where = $this->cut_one();
