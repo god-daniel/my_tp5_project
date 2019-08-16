@@ -579,7 +579,7 @@ class Market extends Controller{
 		$where[] = array('f.status','=',1);
 		$data = Db::table($table)
 			->alias('f')
-			->field('f.*,m.current,m.mc,m.fmc,m.pre_current,m.max_current,m.open_current,m.pct')
+			->field('f.*,m.current,m.mc,m.fmc,m.pre_current,m.max_current,m.open_current,m.pct,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
