@@ -107,7 +107,7 @@ class Market extends Controller{
 			$out_put = $this->pq_http_get($url);
 			
 			$res = json_decode($out_put,true);
-			sleep(1);
+			sleep(2);
 			$arr = [];
 			$base = new AMarket;
 			foreach ($res['data']['diff'] as $k=>$v){
@@ -504,6 +504,16 @@ class Market extends Controller{
 					break;  
 				case 2:
 					$where = $this->cut_two();
+				case 3:
+					$where = $this->cut_one();
+					break;  
+				case 4:
+					$where = $this->cut_two();
+				case 5:
+					$where = $this->cut_one();
+					break;  
+				case 6:
+					$where = $this->cut_two();
 					break;
 				default:
 					break;
@@ -554,7 +564,11 @@ class Market extends Controller{
 			$arr['open_current'] = $v['open_current'];
 			Db::table($table)->data($arr)->insert();
 		}
-		
+		if($cut_type){ //缓存买入总量
+			$cache[$cut_type]['buy_money'] += $buy_money;
+			$cache[$cut_type]['type'] = $cut_type;
+			Cache::set('count_num'.$date,$cache,36000);
+		}
 		return 1;
     }
 	//  更新 默认sp_a_my_market_all_temp 根据table参数 确定表几
@@ -567,6 +581,7 @@ class Market extends Controller{
 		
 		$buy_money = 0;
 		$sell_money = 0;
+		$all_grow = 0;
 		$date = date("Y-m-d");
 		$cache = Cache::get('count_num'.$date);
 		$table = 'sp_a_my_market_all_temp';
@@ -593,6 +608,18 @@ class Market extends Controller{
 				case 2:
 					$grow = $this->get_grow_one($v,1.5);
 					break;
+				case 3:
+					$grow = $this->get_grow_two($v,1.5);
+					break;  
+				case 4:
+					$grow = $this->get_grow_two($v,1.5);
+					break;
+				case 5:
+					$grow = $this->get_grow_three($v,1.5);
+					break;  
+				case 6:
+					$grow = $this->get_grow_three($v,1.5);
+					break;
 				default:
 					$grow = $this->get_grow_one($v,1.5);
 					break;
@@ -602,7 +629,7 @@ class Market extends Controller{
 				$low = 0.04;
 			}
 			$l_bool = (1-$low)*$v['xz_pct'];
-			$sell_c = (1-0.02)*$v['xz_pct'];
+			$sell_c = (1-0.01)*$v['xz_pct'];  //降幅低于1个点减半仓
 			$arr['id'] = $v['id'];
 			$arr['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
 			if($grow){                //清仓
@@ -613,11 +640,13 @@ class Market extends Controller{
 				$arr['max_current'] = $v['max_current'];
 				$arr['max_grow'] = ($v['max_current']-$v['xz_pct'])/$v['xz_pct']*100;
 				$sell_money += $v['buy_num'];
+				$all_grow = $all_grow+$v['buy_num']*$grow;
 			}
 			if($v['current']>$sell_c&&$v['buy_num']>1){  //减仓
 				$arr['buy_num'] = $v['buy_num']/2;
 				$arr['sell_cs'] = $v['sell_cs']+1;
-				$sell_money += $v['buy_num'];
+				$sell_money += $v['buy_num']/2;
+				$all_grow = $all_grow+$v['buy_num']/2*$grow;
 			}
 			if($v['current']<=$l_bool&&$v['buy_num']<8){  // 加仓
 				$arr['xz_pct'] = ($v['current']+$v['xz_pct'])/2;
@@ -628,51 +657,24 @@ class Market extends Controller{
 			//Db::table($table)->update($arr);
 			Db::table($table)->data($arr)->update();
 		}
+		if($cut_type){ //缓存买入总量 卖出总量
+			$cache[$cut_type]['buy_money'] += $buy_money;
+			$cache[$cut_type]['sell_money'] = $sell_money;
+			$cache[$cut_type]['type'] = $cut_type;
+			Cache::set('count_num'.$date,$cache,36000);
+		}
 		return 1;
     }
-		//  测试
-	public function buy(){
+	// 保存买入卖出总量
+	public function saveMoney(){
 		$date = date("Y-m-d");
-		$type = 1;
-		$data = Cache::get('count_num'.$date);
-		if(input('param.t')){
-            $type = input('param.t');
-        }
-		$data[$type]['buy_money'] = $data[$type]['buy_money']+10;
-		$data[$type]['type'] = $type;
-		Cache::set('count_num'.$date,$data,30);
-		$temp = Cache::get('count_num'.$date);
-		var_dump($temp);
-    }
-		//  测试
-	public function sell(){
-		$date = date("Y-m-d");
-		$type = 1;
-		$data = Cache::get('count_num'.$date);
-		if(input('param.t')){
-            $type = input('param.t');
-        }
-		$data[$type]['sell_money'] = $data[$type]['sell_money']+5;
-		$data[$type]['buy_money'] = $data[$type]['buy_money']+7;
-		$data[$type]['type'] = $type;
-		Cache::set('count_num'.$date,$data,30);
-		$temp = Cache::get('count_num'.$date);
-		var_dump($temp);
-    }
-	//  测试
-	public function test(){
-		$date = date("Y-m-d");
-		$type = 1;
-		$data = Cache::get('count_num'.$date);
-		if(input('param.t')){
-            $type = input('param.t');
-        }
-		$data[$type]['count_money'] = $data[$type]['buy_money']+33;
-		$data[$type]['diff_money'] = $data[$type]['buy_money']-$data[$type]['sell_money'];
-		$data[$type]['date'] = $date;
-		Cache::set('count_num'.$date,$data,30);
-		$temp = Cache::get('count_num'.$date);
-		var_dump($temp);
+		$cache = Cache::get('count_num'.$date);
+		foreach($cache as $k=>$v){
+			$cache[$k]['count_money'] = 0;
+			$cache[$k]['diff_money'] = $cache[$k]['buy_money']-$cache[$k]['sell_money'];
+			$cache[$k]['date'] = $date;
+		}
+		var_dump($cache);		
     }
 	//  是否交易日
 	public function is_jiaoyi_day($times=''){
@@ -743,20 +745,20 @@ class Market extends Controller{
 		}
 		return $grow;
     }
-	//  收益算法  10点半后 设置固定收益 grow收益百分点
+	//  收益算法  收盘价收益 grow收益百分点
     public function get_grow_two($v,$grow=1.5){
 		$sy = (1+$grow/100)*$v['xz_pct'];
 		$grow = 0;
-		if($v['max_current']>=$sy){
+		if($v['current']>=$sy){
 			$grow = $grow;
 		}
 		return $grow;
     }
-	//  收益算法  收盘价收益 grow收益百分点
+	//  收益算法  10点半后 设置固定收益 grow收益百分点
     public function get_grow_three($v,$grow=1.5){
 		$sy = (1+$grow/100)*$v['xz_pct'];
 		$grow = 0;
-		if($v['current']>=$sy){
+		if($v['max_current']>=$sy){
 			$grow = $grow;
 		}
 		return $grow;
