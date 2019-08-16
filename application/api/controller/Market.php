@@ -665,6 +665,7 @@ class Market extends Controller{
 		if($cut_type){ //缓存买入总量 卖出总量
 			$cache[$cut_type]['buy_money'] += $buy_money;
 			$cache[$cut_type]['sell_money'] = $sell_money;
+			$cache[$cut_type]['all_grow'] = $all_grow;
 			$cache[$cut_type]['type'] = $cut_type;
 			Cache::set('count_num'.$date,$cache,36000);
 		}
@@ -683,7 +684,6 @@ class Market extends Controller{
 			->select();	
 		foreach($cache as $k=>$v){
 			$cache[$k]['diff_money'] = $cache[$k]['buy_money']-$cache[$k]['sell_money'];//今日的资金占用情况
-			$cache[$k]['count_money'] = $cache[$k]['diff_money'];
 			$cache[$k]['date'] = $date;
 			$cache[$k]['table'] = $cache[$k]['type'];
 			unset($cache[$k]['type']);
