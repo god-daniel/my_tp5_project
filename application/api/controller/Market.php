@@ -618,10 +618,10 @@ class Market extends Controller{
 					$grow = $this->get_grow_two($v,1.5);
 					break;
 				case 5:
-					$grow = $this->get_grow_three($v,1.5);
+					$grow = $this->get_grow_one($v,2.3);
 					break;  
 				case 6:
-					$grow = $this->get_grow_three($v,1.5);
+					$grow = $this->get_grow_one($v,2.3);
 					break;
 				default:
 					$grow = $this->get_grow_one($v,1.5);
