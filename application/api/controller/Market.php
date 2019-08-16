@@ -676,8 +676,10 @@ class Market extends Controller{
 		if(!$cache){
 			return 1;
 		}
-		var_dump(1111);die;
+		var_dump($cache);
 		$count = count($cache);
+		var_dump($count);
+		die;
 		$temp = Db::table($table)
 			->order('id', 'desc')
 			->limit($count)
