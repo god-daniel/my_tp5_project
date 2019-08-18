@@ -504,11 +504,13 @@ class Market extends Controller{
 					break;  
 				case 2:
 					$where = $this->cut_two();
+					break; 
 				case 3:
 					$where = $this->cut_one();
 					break;  
 				case 4:
 					$where = $this->cut_two();
+					break; 
 				case 5:
 					$where = $this->cut_one();
 					break;  
@@ -783,12 +785,12 @@ class Market extends Controller{
     }
 	//  收益算法  10点半后 设置固定收益 grow收益百分点
     public function get_grow_three($v,$grow=1.5){
-		$max = $g1 > $g2 ? ($g1> $g3 ? $g1 : $g3) : ($g2 > $g3 ? $g2 : $g3);
+		$max = $g1 > $g2 ? ($g1> $g3 ? $g1 : $g3) : ($g2 > $g3 ? $g2 : $g3);  //判断10点半前的最大值
 		$m_current = $v['xz_pct']+$max;
 		$sy = (1+$grow/100)*$v['xz_pct'];
 		$sell_grow = 0;
 		if($m_current>=$sy){
-			$sell_grow = $max/$v['xz_pct'];
+			$sell_grow = $max/$v['xz_pct']*100;
 		}
 		return $sell_grow;
     }	
