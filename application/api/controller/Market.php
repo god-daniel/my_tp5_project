@@ -33,6 +33,8 @@ class Market extends Controller{
 	private $host_two_money = 'http://ff.eastmoney.com//EM_CapitalFlowInterface/api/js?type=hff&rtntype=2&js=({data:[(x)]})&cb=var%20aff_data=&check=TMLBMSPROCR&acces_token=1942f5da9b46b069953c873404aad4b5&id=$code$type&_=1562144862102';
     private $type = ['S1101'=>'种植业','S1102'=>'渔业','S1103'=>'林业','S1104'=>'饲料','S1105'=>'农产品加工','S1106'=>'农业综合','S1107'=>'禽畜养殖','S1108'=>'动物保健','S2101'=>'石油开采','S2102'=>'煤炭开采','S2103'=>'其它采掘','S2104'=>'采掘服务','S2201'=>'石油化工','S2202'=>'化学原料','S2203'=>'化学制品','S2204'=>'化学纤维','S2205'=>'塑料',''];
 	private $table = ['0'=>'','1'=>'','2'=>'','3'=>'','4'=>''];
+	//变更记录时间节点
+	private $edit_date = ['1'=>' 9:40','2'=>' 10:00','3'=>' 10:30','4'=>' 11:30','5'=>' 13:30','6'=>' 14:00','7'=>' 14:45','8'=>' 15:10'];
     public function index(){
         var_dump(112);
     }
@@ -111,15 +113,6 @@ class Market extends Controller{
 			$arr = [];
 			$base = new AMarket;
 			foreach ($res['data']['diff'] as $k=>$v){
-				
-				//turnover_rate
-/* 				$arr[$k]['date'] = date("Y-m-d");
-				$arr[$k]['code'] = substr($v['symbol'],2);
-				$arr[$k]['g'.input('param.g')] = $v['pct'];
-				$arr[$k]['current'] = $v['current'];
-				$arr[$k]['pct'] = $v['pct'];
-				$arr[$k]['amount'] = round(($v['amount']/10000),2);
-				$base->where('code',$arr[$k]['code'])->update($arr[$k]);  //更新操作 */
 				if($v['f2']>0){
 					$arr[0]['date'] = date("Y-m-d");
 					$arr[0]['code'] = $v['f12'];
@@ -136,7 +129,47 @@ class Market extends Controller{
             //$day_mode->saveAll($day_arr);
 		}
 		return 1;
-    }	
+    }
+	// (雪球采集)5分钟更新股票基础数据
+	public function baseEdit(){
+        set_time_limit(0);
+		$ijt = $this->is_jiaoyi_time;
+		if($ijt==0){
+			return '不是交易时间';
+		}
+		$is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+		if($is_gzr==0){
+			$date = date("Y-m-d");
+			$now_times = time();
+			$date_arr = $this->edit_date;
+			$url = $this->host_two_base;
+			$out_put = $this->pq_http_get($url);
+			$res = json_decode($out_put,true);
+			$base = new AMarket;
+			$g=0;
+			foreach ($date_arr as $kk=>$vv) {
+				$o_times = strtotime($date.$vv);
+				$abs = abs(($now_times-$o_times));
+				if($abs<=100){
+					$g=$kk;
+				}
+			}
+			foreach ($res['data']['list'] as $k=>$v){
+				$arr = [];
+				if($v['current']>0){
+					$arr['date'] = $date;
+					$arr['code'] = substr($v['symbol'],2);
+					$arr['current'] = $v['current'];
+					$arr['pct'] = $v['pct'];
+					if($g){
+						$arr['g'.$g] = $v['current']-$v['current']/(1+$v['pct']);
+					}
+					$base->where('code',$arr['code'])->update($arr);  //更新操作
+				}
+			}
+		}
+		return 1;
+    }		
     //  当日资金流数据
     public function dayList(){
         set_time_limit(0);
@@ -719,7 +752,7 @@ class Market extends Controller{
 		return $res['data'];
     }
     //  是否交易时间
-    public function is_open_date(){
+    public function is_jiaoyi_time(){
         $times = time();
         $beginTimes1=mktime(9,30,0,date('m'),date('d'),date('Y'));
         $beginTimes2=mktime(13,0,0,date('m'),date('d'),date('Y'));
