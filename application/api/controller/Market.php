@@ -709,6 +709,9 @@ class Market extends Controller{
 	// 保存买入卖出总量
 	public function saveMoney(){
 		$date = date("Y-m-d");
+		if(input('param.date')){
+			$date = input('param.date');
+		}
 		$cache = Cache::get('count_num'.$date);
 		if(!$cache){
 			return 1;
