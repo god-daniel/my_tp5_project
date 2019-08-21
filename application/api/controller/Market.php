@@ -168,7 +168,7 @@ class Market extends Controller{
 				}
 			}
 		}
-		return 1;
+		return $g;
     }		
     //  当日资金流数据
     public function dayList(){
