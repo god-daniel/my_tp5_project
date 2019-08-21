@@ -153,6 +153,8 @@ class Market extends Controller{
 				if($abs<=180){
 					$g=$kk;
 				}
+				var_dump($kk);
+				echo '</br>';
 			}
 			foreach ($res['data']['list'] as $k=>$v){
 				$arr = [];
@@ -162,13 +164,12 @@ class Market extends Controller{
 					$arr['current'] = $v['current'];
 					$arr['pct'] = $v['pct'];
 					if($g){
-						$arr['g'.$g] = $v['current']-$v['current']/(1+$v['pct']);
+						$cshu = 1+$v['pct']/100;
+						$arr['g'.$g] = $v['current']-$v['current']/$cshu;
 					}
 					$base->where('code',$arr['code'])->update($arr);  //更新操作
 				}
 			}
-			echo 'now_times:'.$now_times.' | o_times:'.$o_times.' | abs:'.$abs;
-			echo '</br>';
 		}
 		return $g;
     }		
