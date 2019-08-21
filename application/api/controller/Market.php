@@ -167,6 +167,8 @@ class Market extends Controller{
 					$base->where('code',$arr['code'])->update($arr);  //更新操作
 				}
 			}
+			echo 'now_times:'.$now_times.' | o_times:'.$o_times.' | abs:'.$abs;
+			echo '</br>';
 		}
 		return $g;
     }		
