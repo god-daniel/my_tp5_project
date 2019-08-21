@@ -150,7 +150,7 @@ class Market extends Controller{
 			foreach ($date_arr as $kk=>$vv) {
 				$o_times = strtotime($date.$vv);
 				$abs = abs(($now_times-$o_times));
-				if($abs<=100){
+				if($abs<=180){
 					$g=$kk;
 				}
 			}
