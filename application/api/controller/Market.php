@@ -133,7 +133,7 @@ class Market extends Controller{
 	// (雪球采集)5分钟更新股票基础数据
 	public function baseEdit(){
         set_time_limit(0);
-		$ijt = $this->is_jiaoyi_time;
+		$ijt = $this->is_jiaoyi_time();
 		if($ijt==0){
 			return '不是交易时间';
 		}
