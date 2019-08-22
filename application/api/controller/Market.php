@@ -66,6 +66,7 @@ class Market extends Controller{
 				$arr[$k]['c_bps'] = round((($v['current']-$v['bps'])/$v['bps']),2);
 				$arr[$k]['bps'] = round($v['bps'],2);
 				$arr[$k]['eps'] = round($v['eps'],2);
+				$arr[$k]['c_eps'] = round($v['eps']/$v['current'],4);
 				$arr[$k]['pct_current_year'] = $v['pct_current_year'];
 				//$arr[$k]['pct5'] = round($v['pct5'],2);
 				//$arr[$k]['pct10'] = round($v['pct10'],2);
