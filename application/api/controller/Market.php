@@ -720,6 +720,7 @@ class Market extends Controller{
 		if(!$cache){
 			return 1;
 		}
+		$count = count($cache);
 		$temp = Db::table('sp_a_my_market_all_money')
 			->order('id', 'desc')
 			->limit($count)
