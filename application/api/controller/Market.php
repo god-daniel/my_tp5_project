@@ -578,6 +578,7 @@ class Market extends Controller{
 			$arr['indcode'] = $v['indcode'];
 			$arr['cut_type'] = $cut_type;
 			$arr['green_num'] = $v['green_num'];
+			$arr['low_grow'] = 0;
 			if($v['green_num']>1){
 				$arr['low_grow'] = ($v['c'.$v['green_num']]-$v['c1'])/$v['c1']*100;
 			}
