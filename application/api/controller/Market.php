@@ -124,7 +124,7 @@ class Market extends Controller{
 					$arr[0]['max_current'] = $v['f15'];
 					$arr[0]['min_current'] = $v['f16'];
 					$arr[0]['change_shou'] = $v['f8'];
-					$arr[0]['now_pct_min'] = ($v['f2']-$v['f16'])/$v['f16'];
+					$arr[0]['now_pct_min'] = ($v['f2']-$v['f16'])/$v['f16']*100;
 					$arr[0]['swing'] = $v['f7'];
 					$arr[0]['pct'] = $v['f3'];
 					$arr[0]['amount'] = round(($v['f6']/10000),2);
