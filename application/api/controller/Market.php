@@ -648,7 +648,6 @@ class Market extends Controller{
             $table .= input('param.table');
 			$cut_type = input('param.table');
         }
-		$where[] = array('m.pct','>','-6');
 		$where[] = array('f.status','=',1);
 		$data = Db::table($table)
 			->alias('f')
@@ -699,10 +698,10 @@ class Market extends Controller{
 			if($v['buy_num']>1){
 				$low = 0.04;
 			}
-			if($v['buy_num']=4){
+			if($v['buy_num']==4){
 				$low = 0.08;
 			}
-			if($v['buy_num']=8){
+			if($v['buy_num']==8){
 				$sell_low = 0.02;
 			}
 			$l_bool = (1-$low)*$v['xz_pct'];
@@ -710,6 +709,17 @@ class Market extends Controller{
 			$arr['id'] = $v['id'];
 			$arr['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
 			if($grow){                //清仓
+				$arr['status'] = 2;
+				$arr['sell_pct'] = (1+$grow/100)*$v['xz_pct'];
+				$arr['sell_date'] = $date;
+				$arr['grow'] = $grow;
+				$arr['max_current'] = $v['max_current'];
+				$arr['max_grow'] = ($v['max_current']-$v['xz_pct'])/$v['xz_pct']*100;
+				$arr['sell_cs'] = $v['sell_cs']+1;
+				$sell_money += $v['buy_num'];
+				$all_grow = $all_grow+$v['buy_num']*$grow;
+			}
+			if($grow<(-7)&&$v['buy_num']==8){                //清仓
 				$arr['status'] = 2;
 				$arr['sell_pct'] = (1+$grow/100)*$v['xz_pct'];
 				$arr['sell_date'] = $date;
