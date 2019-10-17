@@ -122,6 +122,10 @@ class Market extends Controller{
 					$arr[0]['pre_current'] = $v['f18'];
 					$arr[0]['open_current'] = $v['f17'];
 					$arr[0]['max_current'] = $v['f15'];
+					$arr[0]['min_current'] = $v['f16'];
+					$arr[0]['change_shou'] = $v['f8'];
+					$arr[0]['now_pct_min'] = ($v['f2']-$v['f16'])/$v['f16'];
+					$arr[0]['swing'] = $v['f7'];
 					$arr[0]['pct'] = $v['f3'];
 					$arr[0]['amount'] = round(($v['f6']/10000),2);
 					$base->where('code',$arr[0]['code'])->update($arr[0]);
@@ -563,7 +567,7 @@ class Market extends Controller{
 		$where[] = array('f.d1','=',$date);		
 		$data = Db::table('sp_a_market_fund')
 			->alias('f')
-			->field('f.*,m.amount,m.mc,m.fmc,m.indcode,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8,m.open_current,m.pre_current,m.pct')
+			->field('f.*,m.amount,m.mc,m.fmc,m.indcode,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8,m.open_current,m.pre_current,m.pct,m.min_current,m.change_shou,m.now_pct_min,m.swing')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
@@ -598,6 +602,10 @@ class Market extends Controller{
 			$arr['g6'] = $v['g6'];
 			$arr['g7'] = $v['g7'];
 			$arr['g8'] = $v['g8'];
+			$arr['min_current'] = $v['min_current'];
+			$arr['change_shou'] = $v['change_shou'];
+			$arr['now_pct_min'] = $v['now_pct_min'];
+			$arr['swing'] = $v['swing'];
 			$arr['now_grow'] = $v['p1'];
 			$arr['pre_grow'] = $v['p2'];
 			$arr['pre_current'] = $v['pre_current'];
