@@ -695,11 +695,18 @@ class Market extends Controller{
 					break;
 			}
 			$low = 0.03;
+			$sell_low = 0.01;  //降幅低于1个点减半仓
 			if($v['buy_num']>1){
 				$low = 0.04;
 			}
+			if($v['buy_num']=4){
+				$low = 0.08;
+			}
+			if($v['buy_num']=8){
+				$sell_low = 0.02;
+			}
 			$l_bool = (1-$low)*$v['xz_pct'];
-			$sell_c = (1-0.01)*$v['xz_pct'];  //降幅低于1个点减半仓
+			$sell_c = (1-$sell_low)*$v['xz_pct'];  //降幅低于x个点减半仓
 			$arr['id'] = $v['id'];
 			$arr['date_num'] = (strtotime($date)-strtotime($v['buy_date']))/86400;
 			if($grow){                //清仓
