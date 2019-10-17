@@ -20,6 +20,7 @@ class Market extends Controller{
     private $pageNo;
     private $keywords;
 
+	//更改时间节点  2019年10月17号数据库新增min_current、change_shou、now_pct_min、swing字段
 	// 基础股票采集网址（东方财富） 沪深A股 展示网址 http://quote.eastmoney.com/center/gridlist.html#hs_a_board
 	
 	private $host_base = 'http://21.push2.eastmoney.com/api/qt/clist/get?pn=1&pz=10000&po=0&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f2&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2&fields=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f13,f14,f15,f16,f17,f18,f20,f21,f23,f24,f25,f22,f11,f62,f128,f136,f115,f152';
@@ -558,6 +559,15 @@ class Market extends Controller{
 				case 6:
 					$where = $this->cut_two();
 					break;
+				case 7:
+					$where = $this->cut_four();
+					break;
+				case 8:
+					$where = $this->cut_five();
+					break;
+				case 9:
+					$where = $this->cut_three();
+					break;
 				default:
 					break;
 			}
@@ -642,7 +652,7 @@ class Market extends Controller{
 		$where[] = array('f.status','=',1);
 		$data = Db::table($table)
 			->alias('f')
-			->field('f.id,f.code,f.name,f.xz_pct,f.buy_cs,f.buy_num,f.sell_cs,f.buy_date,m.current,m.max_current,m.open_current,m.pct,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8')
+			->field('f.id,f.code,f.name,f.xz_pct,f.buy_cs,f.buy_num,f.sell_cs,f.buy_date,m.current,m.max_current,m.open_current,m.pre_current,m.pct,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
@@ -670,6 +680,15 @@ class Market extends Controller{
 					break;  
 				case 6:
 					$grow = $this->get_grow_one($v,2.3);
+					break;
+				case 7:
+					$grow = $this->get_grow_one($v,1.6);
+					break;
+				case 8:
+					$grow = $this->get_grow_one($v,1.6);
+					break;
+				case 9:
+					$grow = $this->get_grow_one($v,1.6);
 					break;
 				default:
 					$grow = $this->get_grow_one($v,1.5);
@@ -853,6 +872,30 @@ class Market extends Controller{
 	//  筛选算法2
     public function cut_two(){
         $where[] = array('f.green_num','>','3');
+		return $where;
+    }
+	//  筛选算法3
+    public function cut_three(){
+        $where[] = array('f.green_num','>','2');
+		$where[] = array('m.change_shou','<','0.21');
+		$where[] = array('m.current','>','4.99');
+		return $where;
+    }
+	//  筛选算法4
+    public function cut_four(){
+        $where[] = array('m.g1','<','m.pre_current');
+		$where[] = array('m.g2','<','m.pre_current');
+		$where[] = array('m.now_pct_min','>','3');
+		$where[] = array('(m.pre_current-m.min_current)/m.pre_current','>','0.02');
+		$where[] = array('m.pct','<','4.5');
+		$where[] = array('m.current','>','4.99');
+		return $where;
+    }
+	//  筛选算法5
+    public function cut_five(){
+		$where[] = array('(m.pre_current-m.min_current)/m.pre_current','>','0.02');
+		$where[] = array('m.now_pct_min','>','3');
+		$where[] = array('m.current','>','4.99');
 		return $where;
     }
 
