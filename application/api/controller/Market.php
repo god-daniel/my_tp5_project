@@ -116,6 +116,9 @@ class Market extends Controller{
 			$base = new AMarket;
 			foreach ($res['data']['diff'] as $k=>$v){
 				if($v['f2']>0){
+					if(strpos($v['f14'],'ST')){
+						$arr[0]['buy_type'] = 1;
+					}
 					$arr[0]['date'] = date("Y-m-d");
 					$arr[0]['code'] = $v['f12'];
 					$arr[0]['g'.input('param.g')] = $v['f2']-$v['f18'];
