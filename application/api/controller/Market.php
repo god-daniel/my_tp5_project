@@ -127,6 +127,7 @@ class Market extends Controller{
 					$arr[0]['min_current'] = $v['f16'];
 					$arr[0]['change_shou'] = $v['f8'];
 					$arr[0]['now_pct_min'] = ($v['f2']-$v['f16'])/$v['f16']*100;
+					$arr[0]['min_pct'] = ($v['f16']-$v['f18'])/$v['f18']*100;
 					$arr[0]['swing'] = $v['f7'];
 					$arr[0]['pct'] = $v['f3'];
 					$arr[0]['amount'] = round(($v['f6']/10000),2);
@@ -909,14 +910,14 @@ class Market extends Controller{
         $where[] = array('m.g1','<','m.pre_current');
 		$where[] = array('m.g2','<','m.pre_current');
 		$where[] = array('m.now_pct_min','>','3');
-		$where[] = array('(m.pre_current-m.min_current)/m.pre_current','>','0.02');
+		$where[] = array('m.min_pct','<','-2');
 		$where[] = array('m.pct','<','4.5');
 		$where[] = array('m.current','>','4.99');
 		return $where;
     }
 	//  筛选算法5
     public function cut_five(){
-		$where[] = array('(m.pre_current-m.min_current)/m.pre_current','>','0.02');
+		$where[] = array('m.min_pct','<','-2');
 		$where[] = array('m.now_pct_min','>','3');
 		$where[] = array('m.current','>','4.99');
 		return $where;
