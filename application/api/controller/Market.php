@@ -116,9 +116,6 @@ class Market extends Controller{
 			$base = new AMarket;
 			foreach ($res['data']['diff'] as $k=>$v){
 				if($v['f2']>0){
-					if(strpos($v['f14'],'ST')){
-						$arr[0]['buy_type'] = 1;
-					}
 					$arr[0]['name'] = $v['f14'];
 					$arr[0]['date'] = date("Y-m-d");
 					$arr[0]['code'] = $v['f12'];
@@ -418,9 +415,10 @@ class Market extends Controller{
 		$nbase = new AMarket;
 		$where[] = array('d1','>',0);	
 		
-		$data = $hbase::where($where)->field('code,name,now_pr,pre_pr,green_num')->select()->toArray();
+		$data = $hbase::where($where)->field('code,name,now_pr,pre_pr,green_num,buy_type')->select()->toArray();
 		$arr = [];
 		foreach($data as $k=>$v){
+			$arr['buy_type'] = $v['buy_type'];
 			$arr['green_num'] = $v['green_num'];
 			$arr['pre_pr'] = $v['now_pr'];
 			$arr['pre_pr2'] = $v['pre_pr'];
@@ -539,6 +537,7 @@ class Market extends Controller{
 		$table = 'sp_a_my_market_all_temp';
 		$cut_type = 0;
 		$date = date("Y-m-d");
+		//$date = '2019-10-17';
 		$cache = Cache::get('count_num'.$date);
 		if(input('param.table')){
             $table .= input('param.table');
@@ -586,6 +585,7 @@ class Market extends Controller{
 			->where($where)
 			->select();
 		$arr = [];
+		//var_dump($data);die;
 		foreach($data as $k=>$v){
 			if($v['c1']<=0){
 				continue;
@@ -645,6 +645,7 @@ class Market extends Controller{
 		$sell_money = 0;
 		$all_grow = 0;
 		$date = date("Y-m-d");
+		//$date = '2019-10-17';
 		$cache = Cache::get('count_num'.$date);
 		$table = 'sp_a_my_market_all_temp';
 		$cut_type = 0;
@@ -762,6 +763,7 @@ class Market extends Controller{
 	// 保存买入卖出总量
 	public function saveMoney(){
 		$date = date("Y-m-d");
+		//$date = '2019-10-17';
 		if(input('param.date')){
 			$date = input('param.date');
 		}
