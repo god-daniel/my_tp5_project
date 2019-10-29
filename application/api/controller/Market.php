@@ -793,6 +793,57 @@ class Market extends Controller{
 		//Db::table('sp_a_my_market_all_money')->data($cache)->insertAll();
 		var_dump($cache);		
     }
+	// 统计买入卖出总量
+	public function countMoney(){
+		$date = date("Y-m-d");
+		//$date = '2019-10-17';
+		$table = 'sp_a_my_market_all_temp';
+		if(input('param.date')){
+			$date = input('param.date');
+		}
+		if(input('param.table')){
+            $table .= input('param.table');
+        }else{
+			return '请传入表名';
+		}
+		$buy_data = Db::table($table)
+			->alias('f')
+			->sum('buy_num');
+		$where[] = array('f.status','=',1);
+		$now_data = Db::table($table)
+			->alias('f')
+			->where($where)
+			->sum('buy_num');
+		unset($where);
+		$where[] = array('f.status','=',2);
+		$sell_data = Db::table($table)
+			->alias('f')
+			->where($where)
+			->sum('buy_num*grow');
+		$data['date'] = $date;
+		$data['table'] = input('param.table');
+		$data['count_money'] = $now_data;
+		$data['buy_money'] = $buy_data;
+		$data['sell_money'] = $buy_data-$now_data;
+		$data['diff_money'] = $now_data;
+		$data['all_grow'] = $sell_data;
+		$data['types'] = 2;
+		Db::table('sp_a_my_market_all_money')->data($data)->insert();
+		var_dump($data);
+/* 		foreach($cache as $k=>$v){
+			$cache[$k]['diff_money'] = $cache[$k]['buy_money']-$cache[$k]['sell_money'];//今日的资金占用情况
+			$cache[$k]['date'] = $date;
+			$cache[$k]['table'] = $cache[$k]['type'];
+			unset($cache[$k]['type']);
+			foreach($temp as $kk=>$vv){
+				if($vv['table']==$k){
+					$cache[$k]['count_money'] = $vv['count_money']+$cache[$k]['diff_money'];  //总的资金占用情况
+				}
+			}
+			Db::table('sp_a_my_market_all_money')->data($cache[$k])->insert();
+		} */
+		//Db::table('sp_a_my_market_all_money')->data($cache)->insertAll();	
+    }	
 	public function clear_cache(){
 		$date = date("Y-m-d");
 		Cache::rm('count_num'.$date);
