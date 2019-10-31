@@ -775,7 +775,7 @@ class Market extends Controller{
 		$count = count($cache);
 		$temp = Db::table('sp_a_my_market_all_money')
 			->order('id', 'desc')
-			->limit(6)
+			->limit($count)
 			->select();	
 
 		foreach($cache as $k=>$v){
