@@ -29,9 +29,9 @@ class PermissionService
      *
      * @return \think\Paginator
      */
-    function getList()
+    function getList($where)
     {
-        return $this->model->paginate(...$this->getPaginateDefault());
+        return $this->model->where($where)->paginate(...$this->getPaginateDefault());
     }
 
     /**

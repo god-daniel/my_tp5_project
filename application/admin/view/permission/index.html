@@ -3,12 +3,23 @@
 {block name="main"}
 <div class="admin-main">
     <blockquote class="layui-elem-quote">
-        <a href="{:url('permission/add')}" class="layui-btn layui-btn-small">
+        
+	<div class="layui-row">
+        <div class="layui-col-xs6">
+		<a href="{:url('permission/add')}" class="layui-btn layui-btn-small">
             <i class="layui-icon">&#xe608;</i> 添加权限
         </a>
         <a href="#" class="layui-btn layui-btn-small layui-btn-danger" id="deleteAll">
             <i class="layui-icon">&#xe640;</i> 全部删除
         </a>
+		</div>
+		<div class="layui-col-xs6" style="padding-left: 20%;">
+			<div class="layui-input-inline">
+				<input type="text" class="layui-input" value="{$name}" placeholder="请输入关键字" id="search">
+			</div>
+			<button class="layui-btn" onclick="searchs()"><i class="layui-icon">&#xe615;</i>搜索</button>
+		</div>
+	</div>
     </blockquote>
     <fieldset class="layui-elem-field">
         <legend>权限列表</legend>
@@ -178,6 +189,11 @@
         })
 
     });
+	function searchs(){
+		var search =document.getElementById("search").value
+		var url = "/admin/spidercate/index?name="+search;
+		window.location.href = url;
+	}
 </script>
 {include file="Widget/result" /}
 {/block}

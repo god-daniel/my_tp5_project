@@ -25,8 +25,14 @@ class Permission extends Base
      */
     public function getList()
     {
+		$where[] = array('1','=',1);
+		$name = Request::param('name');
+		if($name){
+			$where[] = array('name','like','%'.$name.'%');
+		}
         return $this->response->collection(
-            $this->service->getList()
+            //$this->service->getList()
+			$this->service->getList($where)
         );
     }
 

@@ -27,7 +27,8 @@ class Permission extends BaseController
      */
     public function index()
     {
-        return view();
+        $name = Request::param('name');
+        return view('',compact('name'));
     }
 
     /**
