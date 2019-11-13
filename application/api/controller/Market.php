@@ -191,7 +191,26 @@ class Market extends Controller{
         }
 		return 1;
     }
-	
+	//  定时重置ST状态
+    public function changeST(){
+        set_time_limit(0);
+        $times = time()-86400;
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+		if($is_gzr==0){
+			$base = new AMarket;
+			$where[] = array('name','like','%ST%');
+			$where[] = array('buy_type','=',0);
+			$data = $base::field('id,name,code,buy_type')->where($where)->select()->toArray();
+			var_dump($data);
+			foreach($data as $k=>$v){
+				$v['buy_type'] = 1;
+				$data[$k]['buy_type'] = 1;
+				//$base->save($v, ['id' => $v['id']]);
+			}
+			$base->saveAll($data);
+        }
+		return 1;
+    }	
 	//  所有历史资金数据
 	public function historyAllList(){
         set_time_limit(0);
@@ -974,5 +993,12 @@ class Market extends Controller{
 		$where[] = array('m.current','>','4.99');
 		return $where;
     }
+	//  筛选算法10
+    public function cut_ten(){
+		$where[] = array('m.min_pct','<','-2');
+		$where[] = array('m.now_pct_min','>','3');
+		$where[] = array('m.current','>','4.99');
+		return $where;
+    }	
 
 }
