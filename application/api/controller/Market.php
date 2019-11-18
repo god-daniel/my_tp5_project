@@ -210,7 +210,77 @@ class Market extends Controller{
 			$base->saveAll($data);
         }
 		return 1;
-    }	
+    }
+	//  得到之前4天和5天的均值
+    public function avgFour(){
+        set_time_limit(0);
+        $times = time()-86400;
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+		if($is_gzr==0){
+			$base = new AMarket;
+			$where[] = array('1','=',1);
+			$data = $base::field('id,name,code,buy_type')->where($where)->select()->toArray();
+			$temp = array();
+			foreach($data as $k=>$v){
+				unset($temp);
+				$ldata = Db::table('sp_a_my_market_all_temp')
+					->field('code,name,buy_pct')
+					->where('code', $v['code'])
+					->order('id', 'desc')
+					->limit(5)
+					->select();
+				$temp['code'] = $v['code'];
+				$temp['current4'] = ($ldata[1]['buy_pct']+$ldata[2]['buy_pct']+$ldata[3]['buy_pct']+$ldata[4]['buy_pct']+$ldata[5]['buy_pct'])/4;
+				$temp['current5'] = ($ldata[0]['buy_pct']+$ldata[1]['buy_pct']+$ldata[2]['buy_pct']+$ldata[3]['buy_pct']+$ldata[4]['buy_pct']+$ldata[5]['buy_pct'])/5;
+				$temp['current4'] = round($temp['current4'], 2);
+				$temp['current5'] = round($temp['current5'], 2);
+				$base->save($temp, ['code' => $v['code']]);
+			}
+			
+			//$base->saveAll($data);
+        }
+		return 1;
+    }
+	//  得到之前4天和5天的均值
+    public function avgTempFour(){
+        set_time_limit(0);
+        $times = time()-86400;
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+		if($is_gzr==0){
+			$date = date('Y-m-d');
+			if(input('param.date')){
+				$date = input('param.date');
+			}
+			$where[] = array('1','=',1);
+			$where[] = array('buy_date','=',$date);
+			$data = Db::table('sp_a_my_market_all_temp')
+					->field('id,name,code,buy_pct')
+					->where($where)
+					->select();
+			$temp = array();
+			foreach($data as $k=>$v){
+				unset($temp);
+				$ldata = Db::table('sp_a_my_market_all_temp')
+					->field('code,name,buy_pct')
+					->where([
+						['code','=',$v['code']],
+						['buy_date','<=',$date]
+					])
+					->order('id', 'desc')
+					->limit(5)
+					->select();
+				$temp['code'] = $v['code'];
+				$temp['current5'] = ($ldata[0]['buy_pct']+$ldata[1]['buy_pct']+$ldata[2]['buy_pct']+$ldata[3]['buy_pct']+$ldata[4]['buy_pct']+$ldata[5]['buy_pct'])/5;
+				$temp['current5'] = round($temp['current5'], 2);
+				$temp['pct5'] = ($v['buy_pct']-$temp['current5'])/$temp['current5']*100;
+				$temp['pct5'] = round($temp['pct5'], 2);
+				Db::table('sp_a_my_market_all_temp')->where('id', $v['id'])->update($temp);
+			}
+			
+			//$base->saveAll($data);
+        }
+		return 1;
+    }		
 	//  所有历史资金数据
 	public function historyAllList(){
         set_time_limit(0);
