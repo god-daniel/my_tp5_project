@@ -219,7 +219,7 @@ class Market extends Controller{
 		if($is_gzr==0){
 			$base = new AMarket;
 			$where[] = array('1','=',1);
-			$where[] = array('buy_type','!=',1);
+			$where[] = array('buy_type','in','0,2');
 			$data = $base::field('id,name,code,buy_type,current,current4,current5')->where($where)->select()->toArray();
 			$temp = array();
 			foreach($data as $k=>$v){
