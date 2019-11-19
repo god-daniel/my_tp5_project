@@ -26,7 +26,7 @@ class Market extends Controller{
 	private $host_base = 'http://21.push2.eastmoney.com/api/qt/clist/get?pn=1&pz=10000&po=0&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f2&fs=m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2&fields=f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f13,f14,f15,f16,f17,f18,f20,f21,f23,f24,f25,f22,f11,f62,f128,f136,f115,f152';
 	
 	// 基础股票采集网址（雪球）
-	private $host_two_base = 'https://xueqiu.com/service/screener/screen?category=CN&exchange=sh_sz&areacode=&indcode=&order_by=current&order=asc&page=1&size=10000&only_count=0&current=0.14_1000&pct=&tr=0_70.33&fmc=40493376_1528701245096&mc=114125000_2020823477695&bps.20190331=-6.17_98.76&eps.20190331=-0.82_8.93&volume_ratio=0_84.79&amount=0_9012422827.11&pct_current_year=-88.82_500&_=1562142373571';
+	private $host_two_base = 'https://xueqiu.com/service/screener/screen?category=CN&exchange=sh_sz&areacode=&indcode=&order_by=symbol&order=desc&page=1&size=10000&only_count=0&current=&pct=&mc=&volume=&_=1574142121087';
 	// 股票资金流采集网址（东方财富）
 	private $host_money = 'http://nufm.dfcfw.com/EM_Finance2014NumericApplication/JS.aspx?type=ct&sr=-1&p=1&ps=10000&token=894050c76af8597a853f5b408b759f5d&cmd=C._AB&sty=DCFFITA&rt=52065637';
 	
@@ -46,7 +46,7 @@ class Market extends Controller{
 		$is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
 		if($is_gzr==0){
 			$url = $this->host_two_base;
-			$out_put = $this->pq_http_get($url);
+			$out_put = $this->new_http_get($url);
 			$res = json_decode($out_put,true);
 			$arr = [];
 			$base = new AMarket;
@@ -108,7 +108,7 @@ class Market extends Controller{
 		$is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
 		if($is_gzr==0){
 			$url = $this->host_base;
-			$out_put = $this->pq_http_get($url);
+			$out_put = $this->new_http_get($url);
 			
 			$res = json_decode($out_put,true);
 			sleep(2);
@@ -151,7 +151,9 @@ class Market extends Controller{
 			$now_times = time();
 			$date_arr = $this->edit_date;
 			$url = $this->host_two_base;
-			$out_put = $this->pq_http_get($url);
+			//$out_put = $this->pq_http_get($url);
+			
+			$out_put = $this->new_http_get($url);			
 			$res = json_decode($out_put,true);
 			$base = new AMarket;
 			$g=0;
@@ -316,7 +318,7 @@ class Market extends Controller{
 		foreach($data as $k=>$v){
 			$url_new = str_replace('$code',$v['code'],$url);
 			$url_new = str_replace('$name',$v['name'],$url_new);
-			$res = $this->pq_http_get($url_new);
+			$res = $this->new_http_get($url_new);
 		}
 		return 1;
     }
@@ -336,7 +338,7 @@ class Market extends Controller{
 			}
 			$url = str_replace('$type',$type,$url);
 			$url = str_replace('$code',input('param.code'),$url);
-			$out_put = $this->pq_http_get($url);
+			$out_put = $this->new_http_get($url);
 			
 			$out_put = substr($out_put,22);
 			$out_put = str_replace(')','',$out_put);
@@ -953,7 +955,7 @@ class Market extends Controller{
 		}
 
         $url = "http://api.goseek.cn/Tools/holiday?date=".$date;
-        $out_put = $this->pq_http_get($url);
+        $out_put = $this->new_http_get($url);
         $res = json_decode($out_put,true);
         //$res = file_get_contents($url);
         //$res = json_decode($res,true);
@@ -995,7 +997,20 @@ class Market extends Controller{
         curl_close($ch);
         return $out_put;
     }
-	
+	public function new_http_get($url)
+	{
+		  $curl = curl_init(); // 启动一个CURL会话
+		    curl_setopt($curl, CURLOPT_URL, $url);
+		    curl_setopt($curl, CURLOPT_HEADER, 0);
+		    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+		    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false); // 跳过证书检查
+		    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);  // 从证书中检查SSL加密算法是否存在
+		    $tmpInfo = curl_exec($curl);     //返回api的json对象
+		    //关闭URL请求
+		    curl_close($curl);
+		    return $tmpInfo;    //返回json对象
+		
+	}
 	//得到连绿主力占比
     public function get_green($data){
 		$value = 0;
