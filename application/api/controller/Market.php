@@ -219,11 +219,12 @@ class Market extends Controller{
 		if($is_gzr==0){
 			$base = new AMarket;
 			$where[] = array('1','=',1);
-			$data = $base::field('id,name,code,buy_type')->where($where)->select()->toArray();
+			$where[] = array('buy_type','!=',1);
+			$data = $base::field('id,name,code,buy_type,current,current4,current5')->where($where)->select()->toArray();
 			$temp = array();
 			foreach($data as $k=>$v){
 				unset($temp);
-				$ldata = Db::table('sp_a_my_market_all_temp')
+/* 				$ldata = Db::table('sp_a_my_market_all_temp')
 					->field('code,name,buy_pct')
 					->where('code', $v['code'])
 					->order('id', 'desc')
@@ -233,7 +234,12 @@ class Market extends Controller{
 				$temp['current4'] = ($ldata[1]['buy_pct']+$ldata[2]['buy_pct']+$ldata[3]['buy_pct']+$ldata[4]['buy_pct']+$ldata[5]['buy_pct'])/4;
 				$temp['current5'] = ($ldata[0]['buy_pct']+$ldata[1]['buy_pct']+$ldata[2]['buy_pct']+$ldata[3]['buy_pct']+$ldata[4]['buy_pct']+$ldata[5]['buy_pct'])/5;
 				$temp['current4'] = round($temp['current4'], 2);
+				$temp['current5'] = round($temp['current5'], 2); */
+				$temp['code'] = $v['code'];
+				$temp['current5'] = ($v['current4']*4+$v['current'])/5;
+				$temp['pct5'] = ($v['current']-$temp['current5'])/$temp['current5']*100;
 				$temp['current5'] = round($temp['current5'], 2);
+				$temp['pct5'] = round($temp['pct5'], 2);
 				$base->save($temp, ['code' => $v['code']]);
 			}
 			
