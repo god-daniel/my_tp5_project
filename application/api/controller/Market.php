@@ -27,6 +27,8 @@ class Market extends Controller{
 	
 	// 基础股票采集网址（雪球）
 	private $host_two_base = 'https://xueqiu.com/service/screener/screen?category=CN&exchange=sh_sz&areacode=&indcode=&order_by=symbol&order=desc&page=1&size=10000&only_count=0&current=&pct=&mc=&volume=&_=1574142121087';
+	// 基础股票采集网址（雪球）
+	private $host_one_base = 'https://xueqiu.com/service/screener/screen?category=CN&exchange=sh_sz&areacode=&indcode=&order_by=symbol&order=desc&page=1&size=10000&only_count=0&current=0.08_1231.3&pct=-16.68_44.02&bps.20190930=-7.3_99.71&eps.20190930=-5.42_24.24&pettm=-24069.19_232570.95&pelyr=-1555.03_2892.59&fmc=20026746_1546756351140&mc=102025000_2042207853120&amount=0_6568187721&volume_ratio=0_196.15&tr=0_75.2&chgpct=0_24.02&volume=0_290792339&pct_current_year=-91.64_1116.61&_=1574323146517';
 	// 股票资金流采集网址（东方财富）
 	private $host_money = 'http://nufm.dfcfw.com/EM_Finance2014NumericApplication/JS.aspx?type=ct&sr=-1&p=1&ps=10000&token=894050c76af8597a853f5b408b759f5d&cmd=C._AB&sty=DCFFITA&rt=52065637';
 	
@@ -45,7 +47,7 @@ class Market extends Controller{
         set_time_limit(0);
 		$is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
 		if($is_gzr==0){
-			$url = $this->host_two_base;
+			$url = $this->host_one_base;
 			$out_put = $this->new_http_get($url);
 			$res = json_decode($out_put,true);
 			$arr = [];
