@@ -518,7 +518,6 @@ class Market extends Controller{
 		$data = $hbase::where($where)->field('code,name,now_pr,pre_pr,green_num,buy_type')->select()->toArray();
 		$arr = [];
 		foreach($data as $k=>$v){
-			$arr['buy_type'] = $v['buy_type'];
 			$arr['green_num'] = $v['green_num'];
 			$arr['pre_pr'] = $v['now_pr'];
 			$arr['pre_pr2'] = $v['pre_pr'];
