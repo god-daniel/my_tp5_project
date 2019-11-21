@@ -208,8 +208,14 @@ class Market extends Controller{
 				$v['buy_type'] = 1;
 				$data[$k]['buy_type'] = 1;
 				//$base->save($v, ['id' => $v['id']]);
+				Db::table('sp_a_market_fund')
+				->where('code', $v['code'])
+				->data(['buy_type' => 1])->update();
+				Db::table('sp_a_market_fund_temp')
+				->where('code', $v['code'])
+				->data(['buy_type' => 1])->update();
 			}
-			$base->saveAll($data);
+			$base->saveAll($data);			
         }
 		return 1;
     }
