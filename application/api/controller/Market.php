@@ -254,7 +254,7 @@ class Market extends Controller{
         }
 		return 1;
     }	
-	//  得到之前4天和5天的均值
+	//  计算5天的均值与涨跌幅
     public function avgFour(){
         set_time_limit(0);
         $times = time()-86400;
