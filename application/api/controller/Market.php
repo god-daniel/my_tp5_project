@@ -222,6 +222,39 @@ class Market extends Controller{
 		return 1;
     }
 	//  得到之前4天和5天的均值
+    public function upAvgFour(){
+        set_time_limit(0);
+        $times = time()-86400;
+        $is_gzr = $this->is_jiaoyi_day(strtotime("-0 day"));
+		if($is_gzr==0){
+			$base = new AMarket;
+			$date = date('Y-m-d');
+			$where[] = array('1','=',1);
+			$where[] = array('buy_type','in','0,2');
+			$where[] = array('date','=',$date);
+			$data = $base::field('id,name,code,buy_type,current,current4,current5')->where($where)->select()->toArray();
+			$temp = array();
+			foreach($data as $k=>$v){
+				unset($temp);
+ 				$ldata = Db::table('sp_a_my_market_all_temp')
+					->field('code,name,buy_pct')
+					->where('code', $v['code'])
+					->order('id', 'desc')
+					->limit(5)
+					->select();
+				$temp['code'] = $v['code'];
+				$temp['current4'] = ($ldata[1]['buy_pct']+$ldata[2]['buy_pct']+$ldata[3]['buy_pct']+$ldata[4]['buy_pct']+$ldata[5]['buy_pct'])/4;
+				$temp['current5'] = ($ldata[0]['buy_pct']+$ldata[1]['buy_pct']+$ldata[2]['buy_pct']+$ldata[3]['buy_pct']+$ldata[4]['buy_pct']+$ldata[5]['buy_pct'])/5;
+				$temp['current4'] = round($temp['current4'], 2);
+				$temp['current5'] = round($temp['current5'], 2);
+				$base->save($temp, ['code' => $v['code']]);
+			}
+			
+			//$base->saveAll($data);
+        }
+		return 1;
+    }	
+	//  得到之前4天和5天的均值
     public function avgFour(){
         set_time_limit(0);
         $times = time()-86400;
