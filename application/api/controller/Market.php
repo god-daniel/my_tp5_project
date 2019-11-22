@@ -687,7 +687,7 @@ class Market extends Controller{
 		$where[] = array('f.d1','=',$date);		
 		$data = Db::table('sp_a_market_fund')
 			->alias('f')
-			->field('f.*,m.amount,m.mc,m.fmc,m.indcode,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8,m.open_current,m.pre_current,m.pct,m.min_current,m.change_shou,m.now_pct_min,m.swing')
+			->field('f.*,m.amount,m.mc,m.fmc,m.indcode,m.g1,m.g2,m.g3,m.g4,m.g5,m.g6,m.g7,m.g8,m.open_current,m.pre_current,m.pct,m.min_current,m.change_shou,m.now_pct_min,m.swing,m.pct5,m.current5')
 			->join(['sp_a_market'=>'m'],'f.code=m.code','LEFT')
 			->where($where)
 			->select();
@@ -723,6 +723,8 @@ class Market extends Controller{
 			$arr['g6'] = $v['g6'];
 			$arr['g7'] = $v['g7'];
 			$arr['g8'] = $v['g8'];
+			$arr['pct5'] = $v['pct5'];
+			$arr['current5'] = $v['current5'];
 			$arr['min_current'] = $v['min_current'];
 			$arr['change_shou'] = $v['change_shou'];
 			$arr['now_pct_min'] = $v['now_pct_min'];
